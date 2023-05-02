@@ -23,6 +23,11 @@ import {
   FormLabel,
   Input,
   VStack,
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+  Box,
 } from "@chakra-ui/react";
 import { Restaurante } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
@@ -85,10 +90,23 @@ export default function Restaurantes() {
 
   useEffect(() => {
     fetch("http://localhost:3000/api/restaurantes")
-      .then((response) => response.json())
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          throw new Error("Ocurrio un error al obtener los restaurantes");
+        }
+      })
       .then((data) => {
         setLoading(false);
         setRestaurantes(data);
+      })
+      .catch((error) => {
+        setLoading(false);
+        setError("Ocurrio un error al obtener los restaurantes");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
       });
   }, []);
 
@@ -141,6 +159,15 @@ export default function Restaurantes() {
           setIsOpen(true);
         }}
       />
+      {error && (
+        <Box position="fixed" top="0" right="0" m={4}>
+          <Alert status="error">
+            <AlertIcon />
+            <AlertTitle mr={2}>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </Box>
+      )}
 
       <AlertDialog
         isOpen={isOpen}
