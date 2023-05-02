@@ -26,12 +26,7 @@ export default function NavBar() {
         icon={<HamburgerIcon />}
         onClick={onOpen}
       />
-      <Drawer
-        placement={placement}
-        onClose={onClose}
-        isOpen={isOpen}
-        size="xs"
-      >
+      <Drawer placement={placement} onClose={onClose} isOpen={isOpen} size="xs">
         <DrawerOverlay>
           <DrawerContent>
             <DrawerCloseButton />
@@ -39,10 +34,10 @@ export default function NavBar() {
             <DrawerBody>
               <ul>
                 <li>
-                  <Link href="/">Home</Link>
+                  <Link href="/">Restaurantes</Link>
                 </li>
                 <li>
-                  <Link href="/about">About</Link>
+                  <Link href="/about">Clientes</Link>
                 </li>
               </ul>
             </DrawerBody>
