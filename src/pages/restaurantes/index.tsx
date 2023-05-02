@@ -212,10 +212,10 @@ export default function Restaurantes() {
 
             <AlertDialogFooter>
               <Button ref={cancelRef} onClick={onClose}>
-                Cancel
+                Cancelar
               </Button>
               <Button colorScheme="red" onClick={handleSubmit} ml={3}>
-                Delete
+                Agregar
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
