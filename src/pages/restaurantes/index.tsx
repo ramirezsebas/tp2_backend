@@ -56,15 +56,14 @@ export default function Restaurantes() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    console.log("submit");
-
-    if (!name || !direccion) {
-      setError("Todos los campos son requeridos");
-      return;
-    }
 
     try {
       if (action === Action.CREATE) {
+        if (!name || !direccion) {
+          setError("Todos los campos son requeridos");
+          return;
+        }
+
         const res = await api.post("/restaurantes", {
           nombre: name,
           direccion: direccion,
