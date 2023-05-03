@@ -28,6 +28,7 @@ import {
   AlertIcon,
   AlertTitle,
   Box,
+  Center,
 } from "@chakra-ui/react";
 import { Cliente } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
@@ -187,14 +188,16 @@ export default function Clientes() {
       </Table>
     </TableContainer>
   ) : (
-    <div>No hay clientes</div>
+    <Center>No hay clientes</Center>
   );
 
   return (
     <>
-      <Heading as="h1" size="xl">
-        Clientes
-      </Heading>
+      <Center>
+        <Heading as="h1" size="xl">
+          Clientes
+        </Heading>
+      </Center>
       {body}
       <FloatingActionButton
         onClick={() => {

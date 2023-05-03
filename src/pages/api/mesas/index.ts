@@ -54,9 +54,9 @@ export default async function handler(
         },
       });
 
-      if (!restaurannte) {
+      if (restaurannte) {
         res.status(400).json({
-          message: "El restaurante no existe",
+          message: "El restaurante ya existe",
         });
         return;
       }

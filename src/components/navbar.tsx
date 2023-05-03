@@ -34,10 +34,13 @@ export default function NavBar() {
             <DrawerBody>
               <ul>
                 <li>
-                  <Link href="/">Restaurantes</Link>
+                  <Link href="/">Home</Link>
                 </li>
                 <li>
-                  <Link href="/about">Clientes</Link>
+                  <Link href="/restaurantes">Restaurantes</Link>
+                </li>
+                <li>
+                  <Link href="/clientes">Clientes</Link>
                 </li>
               </ul>
             </DrawerBody>

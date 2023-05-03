@@ -28,16 +28,19 @@ import {
   AlertIcon,
   AlertTitle,
   Box,
+  Center,
 } from "@chakra-ui/react";
 import { Restaurante } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
 import SpinnerLoading from "@/components/spinner";
 import { ApiService } from "@/data/api_service";
+import { MoreOptionsDialog } from "@/components/more_options_dialog";
 
 enum Action {
   NONE = "NONE",
   CREATE = "CREATE",
   UPDATE = "UPDATE",
+  MORE_OPTIONS = "MORE_OPTIONS",
 }
 
 export default function Restaurantes() {
@@ -138,7 +141,7 @@ export default function Restaurantes() {
               <Td>{restaurante.nombre}</Td>
               <Td>{restaurante.direccion}</Td>
               <Td>
-                <Button
+                {/* <Button
                   colorScheme="teal"
                   variant="outline"
                   onClick={() => {
@@ -172,6 +175,16 @@ export default function Restaurantes() {
                   }}
                 >
                   Eliminar
+                </Button> */}
+                <Button
+                  colorScheme="blue"
+                  variant="outline"
+                  onClick={() => {
+                    setAction(Action.MORE_OPTIONS);
+                    setId(restaurante.id.toString());
+                  }}
+                >
+                  Reservar
                 </Button>
               </Td>
             </Tr>
@@ -180,14 +193,16 @@ export default function Restaurantes() {
       </Table>
     </TableContainer>
   ) : (
-    <div>No hay restaurantes</div>
+    <Center>No hay restaurantes</Center>
   );
 
   return (
     <>
-      <Heading as="h1" size="xl">
-        Restaurantes
-      </Heading>
+      <Center>
+        <Heading as="h1" size="xl">
+          Restaurantes
+        </Heading>
+      </Center>
       {body}
       <FloatingActionButton
         onClick={() => {
@@ -261,6 +276,13 @@ export default function Restaurantes() {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
+
+      <MoreOptionsDialog
+        isOpen={action === Action.MORE_OPTIONS ? true : false}
+        onClose={() => {
+          setAction(Action.NONE);
+        }}
+      />
     </>
   );
 }
