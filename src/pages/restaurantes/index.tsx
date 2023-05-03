@@ -31,19 +31,28 @@ import {
 } from "@chakra-ui/react";
 import { Restaurante } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
+import SpinnerLoading from "@/components/spinner";
+import { ApiService } from "@/data/api_service";
+
+enum Action {
+  NONE = "NONE",
+  CREATE = "CREATE",
+  UPDATE = "UPDATE",
+}
 
 export default function Restaurantes() {
+  const api = new ApiService();
   const [restaurantes, setRestaurantes] = React.useState<Restaurante[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(true);
-  const [isOpen, setIsOpen] = React.useState<boolean>(false);
-  const cancelRef = React.useRef<HTMLButtonElement>(null);
-  const onClose = () => setIsOpen(false);
+  const [loadingRestaurantes, setLoadingRestaurantes] =
+    React.useState<boolean>(false);
 
+  const cancelRef = React.useRef<HTMLButtonElement>(null);
+  const [action, setAction] = React.useState<Action>(Action.NONE);
+
+  const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [direccion, setDireccion] = useState("");
   const [error, setError] = useState("");
-  const [isError, setIsError] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -51,58 +60,57 @@ export default function Restaurantes() {
 
     if (!name || !direccion) {
       setError("Todos los campos son requeridos");
-      setIsError(true);
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:3000/api/restaurantes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      if (action === Action.CREATE) {
+        const res = await api.post("/restaurantes", {
           nombre: name,
           direccion: direccion,
-        }),
-      });
+        });
 
-      const data = await res.json();
+        setRestaurantes([...restaurantes, res]);
+      } else if (action === Action.UPDATE) {
+        const res = await api.put(`/restaurantes/${id}`, {
+          nombre: name,
+          direccion: direccion,
+        });
 
-      if (data && data.error) {
-        setError(data.message);
-        setIsError(true);
-        return;
+        const newRestaurantes = restaurantes.map((restaurante) => {
+          if (restaurante.id === Number(id)) {
+            return res;
+          }
+          return restaurante;
+        });
+
+        setRestaurantes(newRestaurantes);
       }
 
-      setSuccess(true);
-      setName("");
-      setDireccion("");
-      setIsError(false);
-      setIsOpen(false);
-      setSuccess(false);
+      resetForm();
+      setAction(Action.NONE);
     } catch (error) {
       console.log(error);
       setError("Ocurrio un error al crear el restaurante");
-      setIsError(true);
     }
   };
 
+  function resetForm() {
+    setId("");
+    setName("");
+    setDireccion("");
+  }
+
   useEffect(() => {
-    fetch("http://localhost:3000/api/restaurantes")
+    setLoadingRestaurantes(true);
+    api
+      .get(`/restaurantes`)
       .then((response) => {
-        if (response.status === 200) {
-          return response.json();
-        } else {
-          throw new Error("Ocurrio un error al obtener los restaurantes");
-        }
-      })
-      .then((data) => {
-        setLoading(false);
-        setRestaurantes(data);
+        setLoadingRestaurantes(false);
+        setRestaurantes(response);
       })
       .catch((error) => {
-        setLoading(false);
+        setLoadingRestaurantes(false);
         setError("Ocurrio un error al obtener los restaurantes");
         setTimeout(() => {
           setError("");
@@ -110,8 +118,8 @@ export default function Restaurantes() {
       });
   }, []);
 
-  if (loading) {
-    return <div>Cargando...</div>;
+  if (loadingRestaurantes) {
+    return <SpinnerLoading title="Cargando Restaurantes" />;
   }
 
   const body = restaurantes.length ? (
@@ -131,11 +139,39 @@ export default function Restaurantes() {
               <Td>{restaurante.nombre}</Td>
               <Td>{restaurante.direccion}</Td>
               <Td>
-                <Button colorScheme="teal" variant="outline">
+                <Button
+                  colorScheme="teal"
+                  variant="outline"
+                  onClick={() => {
+                    setAction(Action.UPDATE);
+                    setId(restaurante.id.toString());
+                    setName(restaurante.nombre);
+                    setDireccion(restaurante.direccion);
+                  }}
+                >
                   Editar
                 </Button>
 
-                <Button colorScheme="red" variant="outline">
+                <Button
+                  colorScheme="red"
+                  variant="outline"
+                  onClick={() => {
+                    api
+                      .delete(`/restaurantes/${restaurante.id}`)
+                      .then((value) => {
+                        const newRestaurantes = restaurantes.filter(
+                          (rest) => rest.id !== restaurante.id
+                        );
+                        setRestaurantes(newRestaurantes);
+                      })
+                      .catch((error) => {
+                        setError("Ocurrio un error al eliminar el restaurante");
+                        setTimeout(() => {
+                          setError("");
+                        }, 5000);
+                      });
+                  }}
+                >
                   Eliminar
                 </Button>
               </Td>
@@ -156,7 +192,8 @@ export default function Restaurantes() {
       {body}
       <FloatingActionButton
         onClick={() => {
-          setIsOpen(true);
+          setAction(Action.CREATE);
+          resetForm();
         }}
       />
       {error && (
@@ -170,20 +207,26 @@ export default function Restaurantes() {
       )}
 
       <AlertDialog
-        isOpen={isOpen}
+        isOpen={
+          action === Action.CREATE || action === Action.UPDATE ? true : false
+        }
         leastDestructiveRef={cancelRef}
-        onClose={onClose}
+        onClose={() => {
+          setAction(Action.NONE);
+        }}
       >
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Agregar Restaurante
+              {action === Action.CREATE
+                ? "Crear Restaurante"
+                : "Editar Restaurante"}
             </AlertDialogHeader>
 
             <AlertDialogBody>
               <form onSubmit={handleSubmit}>
                 <VStack spacing={4}>
-                  <FormControl isRequired isInvalid={isError}>
+                  <FormControl isRequired isInvalid={error.length !== 0}>
                     <FormLabel>Name</FormLabel>
                     <Input
                       type="text"
@@ -194,7 +237,7 @@ export default function Restaurantes() {
                     <FormErrorMessage>{error}</FormErrorMessage>
                   </FormControl>
 
-                  <FormControl isRequired isInvalid={isError}>
+                  <FormControl isRequired isInvalid={error.length !== 0}>
                     <FormLabel>Direccion</FormLabel>
                     <Input
                       type="text"
@@ -204,18 +247,16 @@ export default function Restaurantes() {
                     />
                     <FormErrorMessage>{error}</FormErrorMessage>
                   </FormControl>
-
-                  {success && <p>Fue creado exitosamente</p>}
                 </VStack>
               </form>
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose}>
+              <Button ref={cancelRef} onClick={() => setAction(Action.NONE)}>
                 Cancelar
               </Button>
               <Button colorScheme="red" onClick={handleSubmit} ml={3}>
-                Agregar
+                {action === Action.CREATE ? "Crear" : "Actualizar"}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
