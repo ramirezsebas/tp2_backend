@@ -49,36 +49,49 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
             if (!data) {
               res.status(400).json({ message: "El cliente no existe" });
               return;
-            } else {
-              prisma.cliente
-                .update({
-                  where: {
-                    id: parseInt(id as string),
-                  },
-                  data: {
-                    nombre: req.body.nombre,
-                    apellido: req.body.apellido,
-                    cedula: req.body.cedula,
-                  },
-                })
-                .then((data) => {
-                  res.status(200).json(data);
-                });
             }
+            prisma.cliente
+              .update({
+                where: {
+                  id: parseInt(id as string),
+                },
+                data: {
+                  nombre: req.body.nombre,
+                  apellido: req.body.apellido,
+                  cedula: req.body.cedula,
+                },
+              })
+              .then((data) => {
+                res.status(200).json(data);
+              });
           });
       }
 
       break;
     case "DELETE":
       prisma.cliente
-        .delete({
+
+        .findFirst({
           where: {
             id: parseInt(id as string),
           },
         })
         .then((data) => {
-          res.status(200).json(data);
+          if (!data) {
+            res.status(400).json({ message: "El cliente no existe" });
+            return;
+          }
+          prisma.cliente
+            .delete({
+              where: {
+                id: parseInt(id as string),
+              },
+            })
+            .then((data) => {
+              res.status(200).json(data);
+            });
         });
+
       break;
   }
 }

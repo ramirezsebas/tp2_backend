@@ -32,19 +32,18 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
           if (data) {
             res.status(400).json({ message: "El cliente ya existe" });
             return;
-          } else {
-            prisma.cliente
-              .create({
-                data: {
-                  nombre: req.body.nombre,
-                  apellido: req.body.apellido,
-                  cedula: req.body.cedula,
-                },
-              })
-              .then((data) => {
-                res.status(200).json(data);
-              });
           }
+          prisma.cliente
+            .create({
+              data: {
+                nombre: req.body.nombre,
+                apellido: req.body.apellido,
+                cedula: req.body.cedula,
+              },
+            })
+            .then((data) => {
+              res.status(200).json(data);
+            });
         });
 
       break;
