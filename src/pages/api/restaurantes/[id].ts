@@ -8,6 +8,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const { nombre, direccion } = req.body;
   const { id } = req.query;
 
+  const parsedId = Number(id);
+  const isIdInteger = isNaN(parsedId);
+
+  if (isIdInteger) {
+    res.status(400).json({ message: "El id debe ser un numero entero" });
+    return;
+  }
+
   switch (method) {
     case "GET":
       prisma.restaurante
@@ -17,7 +25,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
           },
         })
         .then((data) => {
-          res.status(200).json(data);
+          if (data.length === 0) {
+            res
+              .status(400)
+              .json({ message: `No se encontro el restaurante ${id}` });
+          } else {
+            res.status(200).json(data[0]);
+          }
         });
       break;
     case "PATCH":
