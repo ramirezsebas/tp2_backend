@@ -141,7 +141,7 @@ export default function Restaurantes() {
               <Td>{restaurante.nombre}</Td>
               <Td>{restaurante.direccion}</Td>
               <Td>
-                {/* <Button
+                <Button
                   colorScheme="teal"
                   variant="outline"
                   onClick={() => {
@@ -175,7 +175,7 @@ export default function Restaurantes() {
                   }}
                 >
                   Eliminar
-                </Button> */}
+                </Button>
                 <Button
                   colorScheme="blue"
                   variant="outline"
