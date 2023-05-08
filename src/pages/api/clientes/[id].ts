@@ -9,6 +9,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const { nombre, apellido, cedula } = req.body;
   const { id } = req.query;
 
+  const parsedId = Number(id);
+  const isIdInteger = isNaN(parsedId);
+
+  if (isIdInteger) {
+    res.status(400).json({ message: "El id debe ser un numero entero" });
+    return;
+  }
+
   switch (method) {
     case "GET":
       prisma.cliente
@@ -30,20 +38,35 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         return;
       }
 
-      prisma.cliente
-        .update({
-          where: {
-            id: parseInt(id as string),
-          },
-          data: {
-            nombre: req.body.nombre,
-            apellido: req.body.apellido,
-            cedula: req.body.cedula,
-          },
-        })
-        .then((data) => {
-          res.status(200).json(data);
-        });
+      if (cedula) {
+        prisma.cliente
+          .findFirst({
+            where: {
+              id: parseInt(id as string),
+            },
+          })
+          .then((data) => {
+            if (!data) {
+              res.status(400).json({ message: "El cliente no existe" });
+              return;
+            } else {
+              prisma.cliente
+                .update({
+                  where: {
+                    id: parseInt(id as string),
+                  },
+                  data: {
+                    nombre: req.body.nombre,
+                    apellido: req.body.apellido,
+                    cedula: req.body.cedula,
+                  },
+                })
+                .then((data) => {
+                  res.status(200).json(data);
+                });
+            }
+          });
+      }
 
       break;
     case "DELETE":
