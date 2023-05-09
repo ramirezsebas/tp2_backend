@@ -15,6 +15,7 @@ model Restaurante {
   nombre    String
   direccion String
   mesas     Mesa[]
+  reservas  Reserva[]
 }
 
 model Cliente {
@@ -47,6 +48,8 @@ model Reserva {
   id_cliente        Int
   mesa              Mesa     @relation(fields: [id_mesa], references: [id])
   id_mesa           Int
+  id_restaurante    Int
+  restaurante       Restaurante      @relation(fields: [id_restaurante], references: [id])
   cantidad_personas Int
-  fecha_creacion   DateTime @default(now())
+  fecha_creacion    DateTime @default(now())
 }
