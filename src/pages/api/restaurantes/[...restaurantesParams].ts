@@ -309,12 +309,10 @@ export default async function handler(
           });
           return;
         }
-        //dd/mm/yyyy
+
         let fechaReserva = new Date(fecha);
-        // Create a regex expression to validate the time hh:mm for 24 hour format.
         let timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 
-        // Validate the time format.
         if (!timeRegex.test(hora_inicio)) {
           res.status(400).json({
             message: "La hora de inicio debe ser una hora valida",
@@ -322,76 +320,6 @@ export default async function handler(
           return;
         }
 
-        if (!timeRegex.test(hora_fin)) {
-          res.status(400).json({
-            message: "La hora de fin debe ser una hora valida",
-          });
-          return;
-        }
-
-        if (isNaN(fechaReserva.getTime())) {
-          res.status(400).json({
-            message: "La fecha debe ser una fecha valida",
-          });
-          return;
-        }
-
-        // hora_inicio debe ser menor a hora_fin
-        const [hoursInicio, minutesInicio] = hora_inicio.split(":");
-        const [hoursFin, minutesFin] = hora_fin.split(":");
-        const dateInicio = new Date();
-        const dateFin = new Date();
-        dateInicio.setHours(hoursInicio, minutesInicio, 0);
-        dateFin.setHours(hoursFin, minutesFin, 0);
-
-        if (dateInicio.getTime() >= dateFin.getTime()) {
-          res.status(400).json({
-            message: "La hora de inicio debe ser menor a la hora de fin",
-          });
-          return;
-        }
-
-        if (dateFin.getTime() < dateInicio.getTime()) {
-          res.status(400).json({
-            message: "La hora de fin debe ser mayor a la hora de inicio",
-          });
-          return;
-        }
-
-        prisma.reserva
-          .create({
-            data: {
-              fecha: fechaReserva,
-              hora_inicio: dateInicio,
-              hora_fin: dateFin,
-              cantidad_personas: cantidad,
-              mesa: {
-                connect: {
-                  id: parseInt(id_mesa),
-                },
-              },
-              restaurante: {
-                connect: {
-                  id: parseInt(idRestaurante),
-                },
-              },
-              cliente: {
-                connect: {
-                  id: parseInt(id_cliente),
-                },
-              },
-            },
-          })
-          .then((data) => {
-            res.status(200).json(data);
-          })
-          .catch((error) => {
-            console.log(error);
-            res.status(500).json({
-              message: "Error al crear la reserva",
-              error: error,
-            });
-          });
       }
       break;
 
