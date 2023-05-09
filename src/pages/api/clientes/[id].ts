@@ -26,7 +26,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
           },
         })
         .then((data) => {
-          res.status(200).json(data);
+          if (data.length === 0) {
+            res.status(400).json({ message: "El cliente no existe" });
+            return;
+          }
+
+          res.status(200).json(data[0]);
         });
       break;
     case "PATCH":
@@ -38,34 +43,45 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         return;
       }
 
-      if (cedula) {
-        prisma.cliente
-          .findFirst({
-            where: {
-              id: parseInt(id as string),
-            },
-          })
-          .then((data) => {
-            if (!data) {
-              res.status(400).json({ message: "El cliente no existe" });
-              return;
-            }
-            prisma.cliente
-              .update({
-                where: {
-                  id: parseInt(id as string),
-                },
-                data: {
-                  nombre: req.body.nombre,
-                  apellido: req.body.apellido,
-                  cedula: req.body.cedula,
-                },
-              })
-              .then((data) => {
-                res.status(200).json(data);
-              });
-          });
-      }
+      let cliente = prisma.cliente
+        .findFirst({
+          where: {
+            id: parseInt(id as string),
+          },
+        })
+        .then((data) => {
+          if (!data) {
+            res.status(400).json({ message: "El cliente no existe" });
+            return;
+          }
+
+          prisma.cliente
+            .findFirst({
+              where: {
+                id: parseInt(id as string),
+              },
+            })
+            .then((data) => {
+              if (!data) {
+                res.status(400).json({ message: "El cliente no existe" });
+                return;
+              }
+              prisma.cliente
+                .update({
+                  where: {
+                    id: parseInt(id as string),
+                  },
+                  data: {
+                    nombre: req.body.nombre,
+                    apellido: req.body.apellido,
+                    cedula: req.body.cedula,
+                  },
+                })
+                .then((data) => {
+                  res.status(200).json(data);
+                });
+            });
+        });
 
       break;
     case "DELETE":
