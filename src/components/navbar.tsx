@@ -34,9 +34,6 @@ export default function NavBar() {
             <DrawerBody>
               <ul>
                 <li>
-                  <Link href="/">Home</Link>
-                </li>
-                <li>
                   <Link href="/restaurantes">Restaurantes</Link>
                 </li>
                 <li>

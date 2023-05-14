@@ -30,6 +30,7 @@ import {
   AlertTitle,
   Box,
   Center,
+  Link,
 } from "@chakra-ui/react";
 import { Restaurante } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
@@ -187,6 +188,12 @@ export default function Restaurantes() {
                 >
                   Reservar
                 </Button>
+
+                <Link href={`/restaurantes/${restaurante.id}`}>
+                  <Button colorScheme="blue" variant="outline">
+                    Ver Restaurante
+                  </Button>
+                </Link>
               </Td>
             </Tr>
           ))}

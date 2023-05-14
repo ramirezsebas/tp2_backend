@@ -320,6 +320,78 @@ export default async function handler(
           return;
         }
 
+        if (!timeRegex.test(hora_fin)) {
+          res.status(400).json({
+            message: "La hora de fin debe ser una hora valida",
+          });
+          return;
+        }
+
+        let horaInicio = hora_inicio.split(":");
+        let horaFin = hora_fin.split(":");
+        let horaInicioReserva = new Date(
+          fechaReserva.getFullYear(),
+          fechaReserva.getMonth(),
+          fechaReserva.getDate(),
+          horaInicio[0],
+          horaInicio[1]
+        );
+
+        let horaFinReserva = new Date(
+          fechaReserva.getFullYear(),
+          fechaReserva.getMonth(),
+          fechaReserva.getDate(),
+          horaFin[0],
+          horaFin[1]
+        );
+
+        if (horaInicioReserva >= horaFinReserva) {
+          res.status(400).json({
+            message: "La hora de inicio debe ser menor a la hora de fin",
+          });
+          return;
+        }
+
+        let reservas = await prisma.reserva.findMany({
+          where: {
+            id_mesa: parseInt(id_mesa),
+            fecha: fechaReserva,
+            hora_inicio: {
+              gte: horaInicioReserva,
+              lt: horaFinReserva,
+            },
+            hora_fin: {
+              gt: horaInicioReserva,
+              lte: horaFinReserva,
+            },
+          },
+        });
+
+        console.log(reservas);
+
+        if (reservas.length > 0) {
+          res.status(400).json({
+            message: "La mesa ya esta reservada para ese horario",
+          });
+          return;
+        }
+
+        await prisma.reserva.create({
+          data: {
+            id_mesa: parseInt(id_mesa),
+            id_cliente: parseInt(id_cliente),
+            fecha: fechaReserva,
+            hora_inicio: horaInicioReserva,
+            hora_fin: horaFinReserva,
+            id_restaurante: mesa.id_restaurante,
+            fecha_creacion: new Date(),
+            cantidad_personas: parseInt(cantidad),
+          },
+        });
+
+        res.status(200).json({
+          message: "Reserva creada exitosamente",
+        });
       }
       break;
 
