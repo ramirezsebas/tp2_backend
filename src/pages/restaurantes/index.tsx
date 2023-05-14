@@ -49,7 +49,7 @@ export default function Restaurantes() {
   const api = new ApiService();
   const [restaurantes, setRestaurantes] = React.useState<Restaurante[]>([]);
   const [loadingRestaurantes, setLoadingRestaurantes] =
-    React.useState<boolean>(false);
+    React.useState<boolean>(true);
 
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const [action, setAction] = React.useState<Action>(Action.NONE);
@@ -178,7 +178,7 @@ export default function Restaurantes() {
                 >
                   Eliminar
                 </Button>
-                <Button
+                {/* <Button
                   colorScheme="blue"
                   variant="outline"
                   onClick={() => {
@@ -189,11 +189,11 @@ export default function Restaurantes() {
                   Reservar
                 </Button>
 
-                <Link href={`/restaurantes/${restaurante.id}`}>
+                <Link href={`/crear/${restaurante.id}`}>
                   <Button colorScheme="blue" variant="outline">
-                    Ver Restaurante
+                    Reservar
                   </Button>
-                </Link>
+                </Link> */}
               </Td>
             </Tr>
           ))}
@@ -218,6 +218,16 @@ export default function Restaurantes() {
           resetForm();
         }}
       />
+      {/* //Create a button that says Crear Reseva */}
+
+      <Box position="fixed" top="0" right="0" m={4}>
+        <Link href={`/crear-reserva`}>
+          <Button colorScheme="blue" variant="outline">
+            Crear Reservar
+          </Button>
+        </Link>
+      </Box>
+
       {error && (
         <Box position="fixed" top="0" right="0" m={4}>
           <Alert status="error">

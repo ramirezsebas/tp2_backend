@@ -15,7 +15,12 @@ export default async function handler(
   switch (method) {
     case "GET":
       try {
-        let restaurantes = await prisma.restaurante.findMany();
+        let restaurantes = await prisma.restaurante.findMany({
+          include: {
+            reservas: true,
+            mesas: true,
+          },
+        });
         res.status(200).json(restaurantes);
       } catch (error) {
         if (error instanceof PrismaClientInitializationError) {

@@ -23,191 +23,90 @@ import {
 import { set, startOfToday, startOfDay, endOfDay } from "date-fns";
 import { SingleDatepicker } from "chakra-dayzed-datepicker";
 import randomColor from "randomcolor";
+import { ApiService } from "@/data/api_service";
+import { Reserva, Restaurante } from "@prisma/client";
 
-const HomePage = () => {
+const api = new ApiService();
+
+interface Intervalo {
+  id: string;
+  start: Date;
+  end: Date;
+}
+
+// interface Mesa {
+//   id: number;
+//   numSeats: number;
+// }
+
+// interface Reserva {
+//   id: number;
+//   fecha: Date;
+//   intervalo: Intervalo;
+//   mesasReservadas: number[];
+// }
+
+// interface Restaurante {
+//   id: number;
+//   name: string;
+//   address: string;
+//   phone: string;
+//   email: string;
+//   reservas: Reserva[];
+//   mesas: Mesa[];
+// }
+
+interface CircleIconProps {
+  color: string;
+}
+
+const CircleIcon: React.FC<CircleIconProps> = ({ color }) => {
+  return (
+    <Box
+      width="16px"
+      height="16px"
+      borderRadius="50%"
+      backgroundColor={color}
+      marginRight="4px"
+    />
+  );
+};
+
+const cedulas = [
+  "123456789",
+  "987654321",
+  "123456789",
+  "987654321",
+  "123456789",
+  "987654321",
+];
+
+const CrearReserva = () => {
   const [name, setName] = useState<string>("");
+  const [restaurants, setRestaurants] = useState<Restaurante[]>([]);
+  const [loadingRestaurantes, setLoadingRestaurantes] = useState<boolean>(true);
+
+  const [error, setError] = useState<string>("");
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurante>();
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
 
-  interface Intervalo {
-    id: string;
-    start: Date;
-    end: Date;
-  }
-
-  interface Mesa {
-    id: number;
-    numSeats: number;
-  }
-
-  interface Reserva {
-    id: number;
-    fecha: Date;
-    intervalo: Intervalo;
-    mesasReservadas: number[];
-  }
-
-  interface Restaurante {
-    id: number;
-    name: string;
-    address: string;
-    phone: string;
-    email: string;
-    reservas: Reserva[];
-    mesas: Mesa[];
-  }
-
-  const restaurants: Restaurante[] = [
-    {
-      id: 1,
-      name: "McDonald's",
-      address: "Calle 1",
-      phone: "123456789",
-      email: "",
-      mesas: [
-        { id: 1, numSeats: 4 },
-        { id: 2, numSeats: 2 },
-        { id: 3, numSeats: 6 },
-      ],
-      reservas: [
-        {
-          id: 1,
-          fecha: new Date(Date.parse("2023-04-26 00:00")),
-          intervalo: {
-            id: "1",
-            start: new Date(Date.parse("2023-04-26 7:00")),
-            end: new Date(Date.parse("2023-04-26 8:00")),
-          },
-          mesasReservadas: [1, 2],
-        },
-        {
-          id: 2,
-          fecha: new Date(Date.parse("2023-04-26 00:00")),
-          intervalo: {
-            id: "2",
-            start: new Date(Date.parse("2023-04-26 9:00")),
-            end: new Date(Date.parse("2023-04-26 10:00")),
-          },
-          mesasReservadas: [3],
-        },
-        // Add more reservas as needed
-      ],
-    },
-    {
-      id: 2,
-      name: "Burger King",
-      address: "Calle 2",
-      phone: "123456789",
-      email: "",
-      mesas: [
-        { id: 1, numSeats: 4 },
-        { id: 2, numSeats: 2 },
-        { id: 3, numSeats: 6 },
-      ],
-      reservas: [
-        {
-          id: 1,
-          fecha: new Date(Date.parse("2023-04-26 00:00")),
-          intervalo: {
-            id: "1",
-            start: new Date(Date.parse("2023-04-26 12:00")),
-            end: new Date(Date.parse("2023-04-26 14:00")),
-          },
-          mesasReservadas: [1],
-        },
-        {
-          id: 2,
-          fecha: new Date(Date.parse("2023-04-26 00:00")),
-          intervalo: {
-            id: "2",
-            start: new Date(Date.parse("2023-04-26 14:00")),
-            end: new Date(Date.parse("2023-04-26 16:00")),
-          },
-          mesasReservadas: [2, 3],
-        },
-        // Add more reservas as needed
-      ],
-    },
-    {
-      id: 3,
-      name: "Bacon",
-      address: "Calle 3",
-      phone: "123456789",
-      email: "",
-      mesas: [
-        { id: 1, numSeats: 4 },
-        { id: 2, numSeats: 2 },
-        { id: 3, numSeats: 6 },
-      ],
-      reservas: [
-        {
-          id: 1,
-          fecha: new Date(Date.parse("2023-04-26 00:00")),
-          intervalo: {
-            id: "1",
-            start: new Date(Date.parse("2023-04-26 12:00")),
-            end: new Date(Date.parse("2023-04-26 14:00")),
-          },
-          mesasReservadas: [1, 3],
-        },
-        {
-          id: 2,
-          fecha: new Date(Date.parse("2023-04-26 00:00")),
-          intervalo: {
-            id: "2",
-            start: new Date(Date.parse("2023-04-26 14:00")),
-            end: new Date(Date.parse("2023-04-26 16:00")),
-          },
-          mesasReservadas: [2],
-        },
-        {
-          id: 3,
-          fecha: new Date(Date.parse("2023-04-27 00:00")),
-          intervalo: {
-            id: "3",
-            start: new Date(Date.parse("2023-04-27 17:00")),
-            end: new Date(Date.parse("2023-04-27 18:00")),
-          },
-          mesasReservadas: [1, 2],
-        },
-        {
-          id: 4,
-          fecha: new Date(Date.parse("2023-04-27 00:00")),
-          intervalo: {
-            id: "4",
-            start: new Date(Date.parse("2023-04-27 14:00")),
-            end: new Date(Date.parse("2023-04-27 16:00")),
-          },
-          mesasReservadas: [3],
-        },
-      ],
-    },
-  ];
-
-  interface CircleIconProps {
-    color: string;
-  }
-
-  const CircleIcon: React.FC<CircleIconProps> = ({ color }) => {
-    return (
-      <Box
-        width="16px"
-        height="16px"
-        borderRadius="50%"
-        backgroundColor={color}
-        marginRight="4px"
-      />
-    );
-  };
-
-  const cedulas = [
-    "123456789",
-    "987654321",
-    "123456789",
-    "987654321",
-    "123456789",
-    "987654321",
-  ];
+  useEffect(() => {
+    api
+      .get(`/restaurantes`)
+      .then((response) => {
+        console.log("response");
+        console.log(response);
+        setLoadingRestaurantes(false);
+        setRestaurants(response);
+      })
+      .catch((error) => {
+        setLoadingRestaurantes(false);
+        setError("Ocurrio un error al obtener los restaurantes");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+      });
+  }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -309,9 +208,9 @@ const HomePage = () => {
   ): boolean => {
     for (const reserva of restaurantReservations) {
       if (
-        reserva.intervalo.start < selectedInterval[1] &&
-        reserva.intervalo.end > selectedInterval[0] &&
-        reserva.mesasReservadas.includes(tableId)
+        reserva.hora_inicio < selectedInterval[1] &&
+        reserva.hora_fin > selectedInterval[0] &&
+        reserva.mesas.includes(tableId)
       ) {
         return false;
       }
@@ -320,6 +219,23 @@ const HomePage = () => {
   };
 
   const [tableColors, setTableColors] = useState<{ [key: number]: string }>({});
+
+  if (loadingRestaurantes) {
+    return (
+      <Center height={"100vh"}>
+        <p>Cargando</p>
+      </Center>
+    );
+  }
+  if (restaurants.length === 0) {
+    return (
+      <Center height={"100vh"}>
+        <p>No hay restaurantes disponibles</p>
+      </Center>
+    );
+  }
+
+  console.log(restaurants);
 
   return (
     <Box height={"100vh"} paddingTop={"10"}>
@@ -335,7 +251,7 @@ const HomePage = () => {
                 <Select
                   placeholder="Selecciona un restaurante"
                   value={name}
-                  onChange={(e) => {
+                  onChange={(e: any) => {
                     setSelectedRestaurant(
                       restaurants.at(e.target.selectedIndex - 1)
                     );
@@ -347,8 +263,8 @@ const HomePage = () => {
                   }}
                 >
                   {restaurants.map((restaurante) => (
-                    <option key={restaurante.id} value={restaurante.name}>
-                      {restaurante.name}
+                    <option key={restaurante.id} value={restaurante.nombre}>
+                      {restaurante.nombre}
                     </option>
                   ))}
                 </Select>
@@ -357,7 +273,7 @@ const HomePage = () => {
                 <FormLabel>Fecha de reserva</FormLabel>
                 <SingleDatepicker
                   date={selectedDate}
-                  onDateChange={(date) => {
+                  onDateChange={(date: any) => {
                     setSelectedDate(date);
                     if (selectedRestaurant != null) {
                       updateDisabledIntervals(
@@ -436,4 +352,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default CrearReserva;
