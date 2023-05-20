@@ -36,6 +36,10 @@ export default async function handler(
     res.status(400).json({ message: "El id debe ser un numero entero" });
     return;
   }
+
+  console.log("idRestaurante", idRestaurante);
+  // console.log("mesas", mesas);
+  // console.log("idmesas", idMesas);
   switch (method) {
     case "GET":
       // Endpoint: /api/restaurantes/[idRestaurante]/mesas/[idMesas]
@@ -161,10 +165,13 @@ export default async function handler(
     case "POST":
       // Endpoint: /api/restaurantes/[idRestaurante]/mesas
       if (mesas && !idMesas) {
+        console.log("mesas", mesas);
+        console.log("mesas", mesas);
         if (mesas !== "mesas") {
           res.status(400).json({ message: "Parametros invalidos" });
           return;
         }
+
         const { capacidad, direccion, nombre, posicion_x, planta, posicion_y } =
           req.body;
 
@@ -189,6 +196,9 @@ export default async function handler(
           },
         });
 
+        console.log("restaurannte");
+        console.log(restaurannte);
+
         if (!restaurannte) {
           res.status(400).json({
             message: "El restaurante no existe",
@@ -200,6 +210,9 @@ export default async function handler(
         let posicionY = Number(posicion_y);
         let capacidadMesa = Number(capacidad);
         let plantaMesa = Number(planta);
+
+        console.log("posicionX");
+        console.log(posicionX);
 
         if (isNaN(posicionX)) {
           res.status(400).json({
@@ -229,15 +242,18 @@ export default async function handler(
           return;
         }
 
+        console.log("posicionX");
+        console.log(posicionX);
+
         prisma.mesa
           .create({
             data: {
               nombre: nombre,
               direccion: direccion,
-              posicion_x: posicionX,
-              posicion_y: posicionY,
-              planta: plantaMesa,
-              capacidad: capacidadMesa,
+              posicion_x: Number(posicionX),
+              posicion_y: Number(posicionY),
+              planta: Number(plantaMesa),
+              capacidad: Number(capacidadMesa),
               restaurante: {
                 connect: {
                   id: parseInt(idRestaurante),
@@ -255,7 +271,10 @@ export default async function handler(
               error: error,
             });
           });
+        return;
       }
+
+      // Endpoint: /api/restaurantes/[idRestaurante]/reservas
 
       if (reservas && !mesas && !idMesas) {
         const { id_mesa, id_cliente, fecha, hora_fin, hora_inicio, cantidad } =
@@ -430,11 +449,15 @@ export default async function handler(
           return;
         }
 
+        console.log("idRestaurante", idRestaurante);
+
         let restaurannte = await prisma.restaurante.findFirst({
           where: {
             id: parseInt(idRestaurante),
           },
         });
+
+        console.log("restaurannte", restaurannte);
 
         if (!restaurannte) {
           res.status(400).json({
@@ -475,6 +498,8 @@ export default async function handler(
           return;
         }
 
+        console.log("idMesas", idMesas);
+
         let mesa = await prisma.mesa.findFirst({
           where: {
             id: parseInt(idMesas),
@@ -488,6 +513,8 @@ export default async function handler(
           return;
         }
 
+        console.log("mesa", mesa);
+
         prisma.mesa
           .update({
             where: {
@@ -496,18 +523,19 @@ export default async function handler(
             data: {
               nombre: nombre,
               direccion: direccion,
-              posicion_x: posicion_x,
-              posicion_y: posicion_y,
-              planta: planta,
-              capacidad: capacidad,
+              posicion_x: Number(posicion_x),
+              posicion_y: Number(posicion_y),
+              planta: Number(planta),
+              capacidad: Number(capacidad),
             },
           })
           .then((data) => {
             res.status(200).json(data);
           })
           .catch((error) => {
+            console.log(error);
             res.status(500).json({
-              message: "No se pudo actualizar la mesa",
+              message: error.toString() ?? "No se pudo actualizar la mesa",
             });
           });
         return;
@@ -553,7 +581,8 @@ export default async function handler(
           })
           .catch((error) => {
             res.status(500).json({
-              message: "No se puede actualizar el restaurante",
+              message:
+                error.toString() ?? "No se puede actualizar el restaurante",
             });
           });
       }
@@ -562,6 +591,8 @@ export default async function handler(
 
     case "DELETE":
       // Endpoint: /api/restaurantes/[idRestaurante]/mesas/[idMesas]
+      console.log("DELETE");
+      console.log("/api/restaurantes/[idRestaurante]/mesas/[idMesas]");
       if (mesas && idMesas) {
         if (mesas !== "mesas") {
           res.status(400).json({ message: "Parametros invalidos" });
@@ -587,6 +618,8 @@ export default async function handler(
           return;
         }
 
+        console.log("mesa", mesa);
+
         prisma.mesa
           .delete({
             where: {
@@ -598,7 +631,7 @@ export default async function handler(
           })
           .catch((error) => {
             res.status(500).json({
-              message: "No se puede eliminar la mesa",
+              message: error.toString() ?? "No se puede eliminar la mesa",
             });
           });
         return;
@@ -630,7 +663,8 @@ export default async function handler(
           })
           .catch((error) => {
             res.status(500).json({
-              message: "No se puede eliminar el restaurante",
+              message:
+                error.toString() ?? "No se puede eliminar el restaurante",
             });
           });
         return;

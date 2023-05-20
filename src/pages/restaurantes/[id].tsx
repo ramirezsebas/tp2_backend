@@ -20,10 +20,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { endOfToday, set } from "date-fns";
-import {
-  Interval,
-  TimeRange,
-} from "@matiaslgonzalez/react-timeline-range-slider";
+import { TimeRange } from "@matiaslgonzalez/react-timeline-range-slider";
 
 const now = new Date();
 const getTodayAtSpecificHour = (hour = 12) =>

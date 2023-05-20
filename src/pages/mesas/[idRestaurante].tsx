@@ -32,11 +32,12 @@ import {
   Center,
   Link,
 } from "@chakra-ui/react";
-import { Restaurante } from "@prisma/client";
+import { Mesa } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
 import SpinnerLoading from "@/components/spinner";
 import { ApiService } from "@/data/api_service";
 import { MoreOptionsDialog } from "@/components/more_options_dialog";
+import { useRouter } from "next/router";
 
 enum Action {
   NONE = "NONE",
@@ -45,11 +46,13 @@ enum Action {
   MORE_OPTIONS = "MORE_OPTIONS",
 }
 
-export default function Restaurantes() {
+export default function Mesas() {
   const api = new ApiService();
-  const [restaurantes, setRestaurantes] = React.useState<Restaurante[]>([]);
-  const [loadingRestaurantes, setLoadingRestaurantes] =
-    React.useState<boolean>(true);
+  const router = useRouter();
+  const { idRestaurante } = router.query;
+  console.log(idRestaurante);
+  const [mesas, setMesas] = React.useState<Mesa[]>([]);
+  const [loadingMesas, setLoadingMesas] = React.useState<boolean>(true);
 
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const [action, setAction] = React.useState<Action>(Action.NONE);
@@ -57,6 +60,10 @@ export default function Restaurantes() {
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [direccion, setDireccion] = useState("");
+  const [planta, setPlanta] = useState("");
+  const [capacidad, setCapacidad] = useState("");
+  const [posicionX, setPosicionX] = useState("");
+  const [posicionY, setPosicionY] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: any) => {
@@ -69,33 +76,52 @@ export default function Restaurantes() {
           return;
         }
 
-        const res = await api.post("/restaurantes", {
+        const res = await api.post(`/restaurantes/${idRestaurante}/mesas`, {
           nombre: name,
           direccion: direccion,
+          capacidad: capacidad.toString(),
+          planta: planta.toString(),
+          posicion_x: posicionX.toString(),
+          posicion_y: posicionY.toString(),
         });
 
-        setRestaurantes([...restaurantes, res]);
+        setMesas([...mesas, res]);
       } else if (action === Action.UPDATE) {
-        const res = await api.put(`/restaurantes/${id}`, {
-          nombre: name,
-          direccion: direccion,
-        });
+        if (Number(posicionX) < 0 || Number(posicionY) < 0) {
+          setError("Las posiciones no pueden ser negativas");
+          setTimeout(() => {
+            setError("");
+          }, 5000);
+          return;
+        }
 
-        const newRestaurantes = restaurantes.map((restaurante) => {
-          if (restaurante.id === Number(id)) {
+        const res = await api.put(
+          `/restaurantes/${idRestaurante}/mesas/${id}`,
+          {
+            nombre: name,
+            direccion: direccion,
+            capacidad: capacidad.toString(),
+            planta: planta.toString(),
+            posicion_x: posicionX.toString(),
+            posicion_y: posicionY.toString(),
+          }
+        );
+
+        const newMesas = mesas.map((mesa) => {
+          if (mesa.id === Number(id)) {
             return res;
           }
-          return restaurante;
+          return mesa;
         });
 
-        setRestaurantes(newRestaurantes);
+        setMesas(newMesas);
       }
 
       resetForm();
       setAction(Action.NONE);
     } catch (error) {
       console.log(error);
-      setError("Ocurrio un error al crear el restaurante");
+      setError("Ocurrio un error al crear el mesa");
     }
   };
 
@@ -106,30 +132,34 @@ export default function Restaurantes() {
   }
 
   useEffect(() => {
-    setLoadingRestaurantes(true);
+    setLoadingMesas(true);
+    console.log("idRestaurante");
+    console.log(idRestaurante);
     api
-      .get(`/restaurantes`)
+      .get(`/restaurantes/${idRestaurante}/mesas`)
       .then((response) => {
-        setLoadingRestaurantes(false);
-        setRestaurantes(response);
+        setLoadingMesas(false);
+        setMesas(response);
+        console.log(response);
       })
       .catch((error) => {
-        setLoadingRestaurantes(false);
-        setError("Ocurrio un error al obtener los restaurantes");
+        console.log(error);
+        setLoadingMesas(false);
+        setError("Ocurrio un error al obtener los mesas");
         setTimeout(() => {
           setError("");
         }, 5000);
       });
   }, []);
 
-  if (loadingRestaurantes) {
-    return <SpinnerLoading title="Cargando Restaurantes" />;
+  if (loadingMesas) {
+    return <SpinnerLoading title="Cargando Mesas" />;
   }
 
-  const body = restaurantes.length ? (
+  const body = mesas.length ? (
     <TableContainer>
       <Table variant="simple">
-        <TableCaption>Restaurantes Disponibles</TableCaption>
+        <TableCaption>Mesas Disponibles</TableCaption>
         <Thead>
           <Tr>
             <Th>Nombre</Th>
@@ -138,19 +168,19 @@ export default function Restaurantes() {
           </Tr>
         </Thead>
         <Tbody>
-          {restaurantes.map((restaurante) => (
-            <Tr key={restaurante.id}>
-              <Td>{restaurante.nombre}</Td>
-              <Td>{restaurante.direccion}</Td>
+          {mesas.map((mesa) => (
+            <Tr key={mesa.id}>
+              <Td>{mesa.nombre}</Td>
+              <Td>{mesa.direccion}</Td>
               <Td>
                 <Button
                   colorScheme="teal"
                   variant="outline"
                   onClick={() => {
                     setAction(Action.UPDATE);
-                    setId(restaurante.id.toString());
-                    setName(restaurante.nombre);
-                    setDireccion(restaurante.direccion);
+                    setId(mesa.id.toString());
+                    setName(mesa.nombre);
+                    setDireccion(mesa.direccion);
                   }}
                 >
                   Editar
@@ -161,15 +191,15 @@ export default function Restaurantes() {
                   variant="outline"
                   onClick={() => {
                     api
-                      .delete(`/restaurantes/${restaurante.id}`)
+                      .delete(`/restaurantes/${idRestaurante}/mesas/${mesa.id}`)
                       .then((value) => {
-                        const newRestaurantes = restaurantes.filter(
-                          (rest) => rest.id !== restaurante.id
+                        const newMesas = mesas.filter(
+                          (rest) => rest.id !== mesa.id
                         );
-                        setRestaurantes(newRestaurantes);
+                        setMesas(newMesas);
                       })
                       .catch((error) => {
-                        setError("Ocurrio un error al eliminar el restaurante");
+                        setError("Ocurrio un error al eliminar el mesa");
                         setTimeout(() => {
                           setError("");
                         }, 5000);
@@ -178,21 +208,6 @@ export default function Restaurantes() {
                 >
                   Eliminar
                 </Button>
-                <Button
-                  colorScheme="blue"
-                  variant="outline"
-                  onClick={() => {
-
-                  }}
-                >
-                  Reservar
-                </Button>
-
-                <Link href={`/mesas/${restaurante.id}`}>
-                  <Button colorScheme="red" variant="outline">
-                    Ver Mesas
-                  </Button>
-                </Link>
               </Td>
             </Tr>
           ))}
@@ -200,14 +215,14 @@ export default function Restaurantes() {
       </Table>
     </TableContainer>
   ) : (
-    <Center>No hay restaurantes</Center>
+    <Center>No hay mesas</Center>
   );
 
   return (
     <>
       <Center>
         <Heading as="h1" size="xl">
-          Restaurantes
+          Mesas
         </Heading>
       </Center>
       {body}
@@ -218,14 +233,6 @@ export default function Restaurantes() {
         }}
       />
       {/* //Create a button that says Crear Reseva */}
-
-      <Box position="fixed" top="0" right="0" m={4}>
-        <Link href={`/crear-reserva`}>
-          <Button colorScheme="blue" variant="outline">
-            Crear Reservar
-          </Button>
-        </Link>
-      </Box>
 
       {error && (
         <Box position="fixed" top="0" right="0" m={4}>
@@ -249,9 +256,7 @@ export default function Restaurantes() {
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              {action === Action.CREATE
-                ? "Crear Restaurante"
-                : "Editar Restaurante"}
+              {action === Action.CREATE ? "Crear Mesa" : "Editar Mesa"}
             </AlertDialogHeader>
 
             <AlertDialogBody>
@@ -261,7 +266,7 @@ export default function Restaurantes() {
                     <FormLabel>Name</FormLabel>
                     <Input
                       type="text"
-                      placeholder="Nombre del Restaurante"
+                      placeholder="Nombre del Mesa"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
@@ -275,6 +280,50 @@ export default function Restaurantes() {
                       placeholder="Ingrese direccion"
                       value={direccion}
                       onChange={(e) => setDireccion(e.target.value)}
+                    />
+                    <FormErrorMessage>{error}</FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isRequired isInvalid={error.length !== 0}>
+                    <FormLabel>Planta</FormLabel>
+                    <Input
+                      type="number"
+                      placeholder="Ingrese Planta"
+                      value={planta}
+                      onChange={(e) => setPlanta(e.target.value)}
+                    />
+                    <FormErrorMessage>{error}</FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isRequired isInvalid={error.length !== 0}>
+                    <FormLabel>Capacidad</FormLabel>
+                    <Input
+                      type="number"
+                      placeholder="Ingrese Capacidad"
+                      value={capacidad}
+                      onChange={(e) => setCapacidad(e.target.value)}
+                    />
+                    <FormErrorMessage>{error}</FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isRequired isInvalid={error.length !== 0}>
+                    <FormLabel>Posicion en X</FormLabel>
+                    <Input
+                      type="number"
+                      placeholder="Ingrese Posicion en X"
+                      value={posicionX}
+                      onChange={(e) => setPosicionX(e.target.value)}
+                    />
+                    <FormErrorMessage>{error}</FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isRequired isInvalid={error.length !== 0}>
+                    <FormLabel>Posicion en Y</FormLabel>
+                    <Input
+                      type="number"
+                      placeholder="Ingrese Posicion en Y"
+                      value={posicionY}
+                      onChange={(e) => setPosicionY(e.target.value)}
                     />
                     <FormErrorMessage>{error}</FormErrorMessage>
                   </FormControl>
