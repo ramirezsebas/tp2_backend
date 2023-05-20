@@ -7,24 +7,23 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Extract from /api/restaurantes/[idRestaurante]/mesas/[idMesas]
+  // Aca extraigo del url los parametros que vienen despues de /api/restaurantes/
+  // Hago esta logica por que no queria usar regex xd
 
-  // const [idRestaurante,reserva mesas, idMesas] = req.query
-  //   .restaurantesParams as string[];
+  // Esta es un arreglo de todo lo que viene despues de /api/restaurantes/
   const params = req.query.restaurantesParams as string[];
 
   const idRestaurante = params[0];
 
+  // Verifico si viene mesas o reservas en los parametros
   const mesas = params.find((param) => param === "mesas");
 
   const reservas = params.find((param) => param === "reservas");
 
-  //Extract all numbers from params
+  // Verifico si viene un numero en los parametros para el id
   const numbers = params.filter((param) => !isNaN(Number(param)));
 
   const idMesas = numbers[1];
-
-  console.log(req.query.restaurantesParams);
 
   const method = req.method;
 
@@ -38,11 +37,12 @@ export default async function handler(
   }
 
   console.log("Peticion");
-  // console.log("mesas", mesas);
-  // console.log("idmesas", idMesas);
   switch (method) {
     case "GET":
       // Endpoint: /api/restaurantes/[idRestaurante]/mesas/[idMesas]
+      // Endpoint: /api/restaurantes/[idRestaurante]/mesas/[idMesas]/reservas
+
+      //Aca entra si el endpoint es /api/restaurantes/[idRestaurante]/mesas/[idMesas]/reservas
       if (mesas && idMesas) {
         if (mesas !== "mesas") {
           res.status(400).json({ message: "Parametros invalidos" });
@@ -94,6 +94,8 @@ export default async function handler(
       }
 
       // Endpoint: /api/restaurantes/[idRestaurante]/mesas
+
+      // Aca entra si el endpoint es /api/restaurantes/[idRestaurante]/mesas
       if (mesas && !idMesas) {
         if (mesas !== "mesas") {
           res.status(400).json({ message: "Parametros invalidos" });
@@ -118,6 +120,8 @@ export default async function handler(
       }
 
       // Endpoint: /api/restaurantes/[idRestaurante]
+
+      // Aca entra si el endpoint es /api/restaurantes/[idRestaurante]
       if (!mesas && !idMesas && !reservas) {
         prisma.restaurante
           .findMany({
