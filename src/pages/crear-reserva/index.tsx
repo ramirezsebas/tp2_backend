@@ -111,6 +111,54 @@ const CrearReserva = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("submit");
+
+    if (!selectedRestaurant) {
+      setError("Debe seleccionar un restaurante");
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+      return;
+    }
+
+    if (!name) {
+      setError("Debe ingresar un nombre");
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+      return;
+    }
+
+    if (!selectedDate) {
+      setError("Debe seleccionar una fecha");
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+      return;
+    }
+
+    // api
+    //   .post(`/restaurantes/${selectedRestaurant.id}/reservas`, {
+    //     id_mesa:,
+    //     id_cliente: ,
+    //     fecha:,
+    //     hora_fin:,
+    //     hora_inicio:,
+    //     cantidad: ,
+    //   })
+    //   .then((response) => {
+    //     console.log("response");
+    //     console.log(response);
+    //     setError("Reserva creada exitosamente");
+    //     setTimeout(() => {
+    //       setError("");
+    //     }, 5000);
+    //   })
+    //   .catch((error) => {
+    //     setError("Ocurrio un error al crear la reserva");
+    //     setTimeout(() => {
+    //       setError("");
+    //     }, 5000);
+    //   });
   };
 
   //TimeRangeVars
@@ -180,8 +228,8 @@ const CrearReserva = () => {
     setDisabledIntervals([]);
     restaurantReservations.forEach((reserva) => {
       if (
-        reserva.fecha.toISOString().slice(0, 10) ===
-        selectedDate.toISOString().slice(0, 10)
+        new Date(reserva.fecha).toISOString().slice(0, 10) ===
+        new Date(selectedDate).toISOString().slice(0, 10)
       ) {
         const tableColor =
           tableColors[parseInt(reserva.intervalo.id)] ||

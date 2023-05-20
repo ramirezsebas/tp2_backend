@@ -178,16 +178,12 @@ export default function Restaurantes() {
                 >
                   Eliminar
                 </Button>
-                <Button
-                  colorScheme="blue"
-                  variant="outline"
-                  onClick={() => {
 
-                  }}
-                >
-                  Reservar
-                </Button>
-
+                <Link href={`/reservas/${restaurante.id}`}>
+                  <Button colorScheme="red" variant="outline">
+                    Ver Reservas
+                  </Button>
+                </Link>
                 <Link href={`/mesas/${restaurante.id}`}>
                   <Button colorScheme="red" variant="outline">
                     Ver Mesas

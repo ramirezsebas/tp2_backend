@@ -37,7 +37,7 @@ export default async function handler(
     return;
   }
 
-  console.log("idRestaurante", idRestaurante);
+  console.log("Peticion");
   // console.log("mesas", mesas);
   // console.log("idmesas", idMesas);
   switch (method) {
@@ -164,9 +164,10 @@ export default async function handler(
 
     case "POST":
       // Endpoint: /api/restaurantes/[idRestaurante]/mesas
+      console.log("/api/restaurantes/[idRestaurante]/mesas");
+      console.log(`/api/restaurantes/${idRestaurante}/mesas`);
+
       if (mesas && !idMesas) {
-        console.log("mesas", mesas);
-        console.log("mesas", mesas);
         if (mesas !== "mesas") {
           res.status(400).json({ message: "Parametros invalidos" });
           return;
@@ -271,10 +272,13 @@ export default async function handler(
               error: error,
             });
           });
+        console.log("FIN");
         return;
       }
 
       // Endpoint: /api/restaurantes/[idRestaurante]/reservas
+      console.log("/api/restaurantes/[idRestaurante]/reservas");
+      console.log(`/api/restaurantes/${idRestaurante}/reservas`);
 
       if (reservas && !mesas && !idMesas) {
         const { id_mesa, id_cliente, fecha, hora_fin, hora_inicio, cantidad } =
@@ -411,6 +415,7 @@ export default async function handler(
         res.status(200).json({
           message: "Reserva creada exitosamente",
         });
+        console.log("FIN");
       }
       break;
 
