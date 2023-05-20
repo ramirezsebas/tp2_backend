@@ -135,6 +135,9 @@ export default function Mesas() {
     setLoadingMesas(true);
     console.log("idRestaurante");
     console.log(idRestaurante);
+    if (!idRestaurante) {
+      return;
+    }
     api
       .get(`/restaurantes/${idRestaurante}/mesas`)
       .then((response) => {
@@ -150,7 +153,7 @@ export default function Mesas() {
           setError("");
         }, 5000);
       });
-  }, []);
+  }, [idRestaurante]);
 
   if (loadingMesas) {
     return <SpinnerLoading title="Cargando Mesas" />;
