@@ -151,6 +151,10 @@ export default async function handler(
       if (reservas && !mesas && !idMesas) {
         prisma.reserva
           .findMany({
+            include: {
+              mesa: true,
+              cliente: true,
+            },
             where: {
               id_restaurante: parseInt(idRestaurante),
             },
