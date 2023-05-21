@@ -118,6 +118,8 @@ export default function Reservas() {
     api
       .get(`/restaurantes/${idRestaurante}/reservas`)
       .then((response) => {
+        console.log("response");
+        console.log(response);
         setLoadingReservas(false);
         setReservas(response);
       })
@@ -140,11 +142,12 @@ export default function Reservas() {
         <TableCaption>Reservas Disponibles</TableCaption>
         <Thead>
           <Tr>
+            <Th>Reservado por</Th>
+            <Th>Mesa</Th>
             <Th>Cantidad de Personas</Th>
             <Th>Fecha</Th>
             <Th>Hora Inicio</Th>
             <Th>Hora Fin</Th>
-            <Th>Acciones</Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -153,6 +156,10 @@ export default function Reservas() {
             console.log(reserva);
             return (
               <Tr key={reserva.id}>
+                <Td>
+                  {reserva.cliente.nombre + " " + reserva.cliente.apellido}
+                </Td>
+                <Td>{reserva.mesa.nombre}</Td>
                 <Td>{reserva.cantidad_personas}</Td>
                 <Td>{new Date(reserva.fecha).toISOString().split("T")[0]}</Td>
                 <Td>
@@ -170,50 +177,6 @@ export default function Reservas() {
                       .split("T")[1]
                       .split(".")[0]
                   }
-                </Td>
-                <Td>
-                  <Button
-                    colorScheme="teal"
-                    variant="outline"
-                    onClick={() => {
-                      setAction(Action.UPDATE);
-                      setId(reserva.id.toString());
-                      setCantidadPersona(reserva.cantidad_personas.toString());
-                      setFecha(
-                        new Date(reserva.fecha)
-                          .toISOString()
-                          .split("T")[0]
-                          .toString()
-                      );
-                    }}
-                  >
-                    Editar
-                  </Button>
-
-                  <Button
-                    colorScheme="red"
-                    variant="outline"
-                    onClick={() => {
-                      api
-                        .delete(
-                          `/restaurantes/${idRestaurante}/reservas/${reserva.id}`
-                        )
-                        .then((value) => {
-                          const newReservas = reservas.filter(
-                            (rest) => rest.id !== reserva.id
-                          );
-                          setReservas(newReservas);
-                        })
-                        .catch((error) => {
-                          setError("Ocurrio un error al eliminar el reserva");
-                          setTimeout(() => {
-                            setError("");
-                          }, 5000);
-                        });
-                    }}
-                  >
-                    Eliminar
-                  </Button>
                 </Td>
               </Tr>
             );
