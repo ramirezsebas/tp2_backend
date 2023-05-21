@@ -290,17 +290,9 @@ export default async function handler(
       console.log(`/api/restaurantes/${idRestaurante}/reservas`);
 
       if (reservas && !mesas && !idMesas) {
-        const { id_mesa, id_cliente, fecha, hora_fin, hora_inicio, cantidad } =
-          req.body;
+        const { id_mesa, cedula, fecha, hora_fin, hora_inicio } = req.body;
 
-        if (
-          !id_mesa ||
-          !id_cliente ||
-          !fecha ||
-          !hora_inicio ||
-          !hora_fin ||
-          !cantidad
-        ) {
+        if (!id_mesa || !cedula || !fecha || !hora_inicio || !hora_fin) {
           res.status(400).json({
             message:
               "Por favor ingresa id_mesa, id_cliente, fecha, hora_inicio, hora_fin y cantidad",
@@ -321,7 +313,12 @@ export default async function handler(
           return;
         }
 
-        if (mesa.capacidad < parseInt(cantidad)) {
+        console.log("mesa");
+        console.log(mesa);
+
+        const cantidad = mesa.capacidad;
+
+        if (mesa.capacidad < cantidad) {
           res.status(400).json({
             message:
               "La cantidad de personas es mayor a la capacidad de la mesa",
@@ -329,11 +326,20 @@ export default async function handler(
           return;
         }
 
+        console.log("mesa Capacidad");
+        console.log(mesa.capacidad);
+
+        console.log("cedula");
+        console.log(cedula);
+
         let cliente = await prisma.cliente.findFirst({
           where: {
-            id: parseInt(id_cliente),
+            cedula: cedula,
           },
         });
+
+        console.log("clientetest");
+        console.log(cliente);
 
         if (!cliente) {
           res.status(400).json({
@@ -342,62 +348,64 @@ export default async function handler(
           return;
         }
 
+        console.log("cliente");
+        console.log(cliente);
+
         let fechaReserva = new Date(fecha);
-        let timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 
-        if (!timeRegex.test(hora_inicio)) {
-          res.status(400).json({
-            message: "La hora de inicio debe ser una hora valida",
-          });
-          return;
-        }
+        console.log("hora_inicio");
+        console.log(hora_inicio);
 
-        if (!timeRegex.test(hora_fin)) {
-          res.status(400).json({
-            message: "La hora de fin debe ser una hora valida",
-          });
-          return;
-        }
+        console.log("hora_fin");
+        console.log(hora_fin);
 
-        let horaInicio = hora_inicio.split(":");
-        let horaFin = hora_fin.split(":");
-        let horaInicioReserva = new Date(
-          fechaReserva.getFullYear(),
-          fechaReserva.getMonth(),
-          fechaReserva.getDate(),
-          horaInicio[0],
-          horaInicio[1]
+        let horaInicioDate = new Date(hora_inicio);
+        let horaFinDate = new Date(hora_fin);
+
+        console.log("fechaReserva");
+        console.log(fechaReserva);
+
+        console.log("horaInicioDate");
+        console.log(
+          horaInicioDate.getUTCHours() +
+            ":" +
+            horaInicioDate.getUTCMinutes() +
+            ":" +
+            horaInicioDate.getUTCSeconds()
         );
 
-        let horaFinReserva = new Date(
-          fechaReserva.getFullYear(),
-          fechaReserva.getMonth(),
-          fechaReserva.getDate(),
-          horaFin[0],
-          horaFin[1]
+        console.log("horaFinDate");
+        console.log(
+          horaFinDate.getUTCHours() +
+            ":" +
+            horaFinDate.getUTCMinutes() +
+            ":" +
+            horaFinDate.getUTCSeconds()
         );
 
-        if (horaInicioReserva >= horaFinReserva) {
-          res.status(400).json({
-            message: "La hora de inicio debe ser menor a la hora de fin",
-          });
-          return;
-        }
+        console.log("horaInicioDate time");
+        console.log(horaInicioDate.getTime());
+
+        console.log("horaFinDate time");
+        console.log(horaFinDate.getTime());
 
         let reservas = await prisma.reserva.findMany({
           where: {
             id_mesa: parseInt(id_mesa),
             fecha: fechaReserva,
             hora_inicio: {
-              gte: horaInicioReserva,
-              lt: horaFinReserva,
+              gte: hora_fin,
+              lt: hora_fin,
             },
             hora_fin: {
-              gt: horaInicioReserva,
-              lte: horaFinReserva,
+              gt: hora_inicio,
+              lte: hora_fin,
             },
           },
         });
+
+        console.log("reservas1212");
+        console.log(reservas);
 
         console.log(reservas);
 
@@ -411,13 +419,13 @@ export default async function handler(
         await prisma.reserva.create({
           data: {
             id_mesa: parseInt(id_mesa),
-            id_cliente: parseInt(id_cliente),
+            id_cliente: cliente.id,
             fecha: fechaReserva,
-            hora_inicio: horaInicioReserva,
-            hora_fin: horaFinReserva,
+            hora_inicio: hora_inicio,
+            hora_fin: hora_fin,
             id_restaurante: mesa.id_restaurante,
             fecha_creacion: new Date(),
-            cantidad_personas: parseInt(cantidad),
+            cantidad_personas: cantidad,
           },
         });
 

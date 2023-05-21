@@ -25,6 +25,7 @@ import { SingleDatepicker } from "chakra-dayzed-datepicker";
 import randomColor from "randomcolor";
 import { ApiService } from "@/data/api_service";
 import { Reserva, Restaurante } from "@prisma/client";
+import { Router, useRouter } from "next/router";
 
 const api = new ApiService();
 
@@ -89,6 +90,10 @@ const CrearReserva = () => {
   const [error, setError] = useState<string>("");
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurante>();
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
+  const [mesa, setMesa] = useState<string>("");
+  const [capacidad, setCapacidad] = useState<string>("");
+  const [cedula, setCedula] = useState<string>("");
+  const router = useRouter();
 
   useEffect(() => {
     api
@@ -108,57 +113,12 @@ const CrearReserva = () => {
       });
   }, []);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("submit");
+  const handleCiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCedula(e.target.value);
+  };
 
-    if (!selectedRestaurant) {
-      setError("Debe seleccionar un restaurante");
-      setTimeout(() => {
-        setError("");
-      }, 5000);
-      return;
-    }
-
-    if (!name) {
-      setError("Debe ingresar un nombre");
-      setTimeout(() => {
-        setError("");
-      }, 5000);
-      return;
-    }
-
-    if (!selectedDate) {
-      setError("Debe seleccionar una fecha");
-      setTimeout(() => {
-        setError("");
-      }, 5000);
-      return;
-    }
-
-    // api
-    //   .post(`/restaurantes/${selectedRestaurant.id}/reservas`, {
-    //     id_mesa:,
-    //     id_cliente: ,
-    //     fecha:,
-    //     hora_fin:,
-    //     hora_inicio:,
-    //     cantidad: ,
-    //   })
-    //   .then((response) => {
-    //     console.log("response");
-    //     console.log(response);
-    //     setError("Reserva creada exitosamente");
-    //     setTimeout(() => {
-    //       setError("");
-    //     }, 5000);
-    //   })
-    //   .catch((error) => {
-    //     setError("Ocurrio un error al crear la reserva");
-    //     setTimeout(() => {
-    //       setError("");
-    //     }, 5000);
-    //   });
+  const handleMesaChange = (event) => {
+    setMesa(event.target.value);
   };
 
   //TimeRangeVars
@@ -268,6 +228,110 @@ const CrearReserva = () => {
 
   const [tableColors, setTableColors] = useState<{ [key: number]: string }>({});
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("submit");
+
+    if (!selectedRestaurant) {
+      setError("Debe seleccionar un restaurante");
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+      return;
+    }
+
+    if (!name) {
+      setError("Debe ingresar un nombre");
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+      return;
+    }
+
+    if (!selectedDate) {
+      setError("Debe seleccionar una fecha");
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+      return;
+    }
+
+    console.log("selectedRestaurant");
+    console.log(selectedRestaurant);
+
+    console.log("name");
+    console.log(name);
+
+    console.log("selectedDate");
+    console.log(selectedDate);
+
+    console.log("mesa");
+    console.log(mesa);
+
+    console.log("ci");
+    console.log(cedula);
+
+    console.log("selectedInterval");
+    console.log(selectedInterval);
+
+    console.log("startTime");
+    console.log(startTime);
+
+    console.log("endTime");
+    console.log(endTime);
+
+    console.log("disabledIntervals");
+    console.log(disabledIntervals);
+
+    console.log("interval 1");
+    console.log(selectedInterval[0]);
+
+    console.log("interval 2");
+    console.log(selectedInterval[1]);
+
+    console.log("interval 1");
+    console.log(selectedInterval[0].getTime());
+
+    console.log("interval 2");
+    console.log(selectedInterval[1].getTime());
+
+    console.log("compare time");
+    console.log(selectedInterval[0].getTime() > selectedInterval[1].getTime());
+
+    if (selectedInterval[0].getTime() > selectedInterval[1].getTime()) {
+      setError("Debe seleccionar un intervalo valido");
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+      return;
+    }
+
+    api
+      .post(`/restaurantes/${selectedRestaurant.id}/reservas`, {
+        id_mesa: mesa,
+        cedula: cedula,
+        fecha: selectedDate,
+        hora_fin: selectedInterval[0].toISOString(),
+        hora_inicio: selectedInterval[1].toISOString(),
+      })
+      .then((response) => {
+        console.log("response");
+        console.log(response);
+        setError("Reserva creada exitosamente");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+
+        router.replace(`/restaurantes`);
+      })
+      .catch((error) => {
+        setError("Ocurrio un error al crear la reserva");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+      });
+  };
+
   if (loadingRestaurantes) {
     return (
       <Center height={"100vh"}>
@@ -352,42 +416,22 @@ const CrearReserva = () => {
                   {selectedInterval[1].toLocaleTimeString()}
                 </Text>
               </FormControl>
-              <FormControl id="tables">
-                <FormLabel>Mesas</FormLabel>
-                <List spacing={3}>
-                  {selectedRestaurant?.mesas.map((mesa) => {
-                    const tableColor =
-                      tableColors[mesa.id] || randomColor({ alpha: 0.1 });
-                    if (!tableColors[mesa.id]) {
-                      setTableColors((prevTableColors) => ({
-                        ...prevTableColors,
-                        [mesa.id]: tableColor,
-                      }));
-                    }
-
-                    return (
-                      <ListItem key={mesa.id}>
-                        <CircleIcon color={tableColor} />
-                        <Checkbox
-                          value={mesa.id}
-                          isDisabled={
-                            !isTableAvailable(
-                              mesa.id,
-                              selectedRestaurant?.reservas || [],
-                              selectedInterval
-                            )
-                          }
-                        >
-                          {mesa.id}
-                        </Checkbox>
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              </FormControl>
+              {selectedRestaurant && (
+                <FormControl id="tables">
+                  <FormLabel>Mesas</FormLabel>
+                  <Select value={mesa} onChange={handleMesaChange} mb={4}>
+                    <option value="">Select an option</option>
+                    {selectedRestaurant?.mesas.map((mesa) => (
+                      <option key={mesa.id} value={mesa.id}>
+                        {mesa.nombre} - (Capacidad = {mesa.capacidad})
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
               <FormControl id="id">
                 <FormLabel>CI / RUC</FormLabel>
-                <Input type="text" />
+                <Input value={cedula} type="text" onChange={handleCiChange} />
               </FormControl>
               <Button type="submit" colorScheme="blue">
                 Crear Reserva
