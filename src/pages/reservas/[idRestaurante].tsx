@@ -60,6 +60,11 @@ export default function Reservas() {
   const [cantidadPersona, setCantidadPersona] = useState("");
   const [fecha, setFecha] = useState("");
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState({
+    nombreCliente: "",
+    restaurante: "",
+    fecha: "",
+  });
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -132,58 +137,109 @@ export default function Reservas() {
       });
   }, [idRestaurante]);
 
+  const applyFilters = (row: any) => {
+    const { nombreCliente, restaurante, fecha } = filters;
+
+    return (
+      row.cliente.nombre.toLowerCase().includes(nombreCliente.toLowerCase()) &&
+      row.restaurante.nombre.toString().includes(restaurante) &&
+      row.fecha.toLowerCase().includes(fecha.toLowerCase())
+    );
+  };
+
+  const filteredData = reservas.filter(applyFilters);
+
+  const handleFilterChange = (event, filterKey) => {
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [filterKey]: event.target.value,
+    }));
+  };
+
   if (loadingReservas) {
     return <SpinnerLoading title="Cargando Reservas" />;
   }
 
   const body = reservas.length ? (
-    <TableContainer>
-      <Table variant="simple">
-        <TableCaption>Reservas Disponibles</TableCaption>
-        <Thead>
-          <Tr>
-            <Th>Reservado por</Th>
-            <Th>Mesa</Th>
-            <Th>Cantidad de Personas</Th>
-            <Th>Fecha</Th>
-            <Th>Hora Inicio</Th>
-            <Th>Hora Fin</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {reservas.map((reserva) => {
-            console.log("reserva");
-            console.log(reserva);
-            return (
-              <Tr key={reserva.id}>
-                <Td>
-                  {reserva.cliente.nombre + " " + reserva.cliente.apellido}
-                </Td>
-                <Td>{reserva.mesa.nombre}</Td>
-                <Td>{reserva.cantidad_personas}</Td>
-                <Td>{new Date(reserva.fecha).toISOString().split("T")[0]}</Td>
-                <Td>
-                  {
-                    new Date(reserva.hora_inicio)
-                      .toISOString()
-                      .split("T")[1]
-                      .split(".")[0]
-                  }
-                </Td>
-                <Td>
-                  {
-                    new Date(reserva.hora_fin)
-                      .toISOString()
-                      .split("T")[1]
-                      .split(".")[0]
-                  }
-                </Td>
-              </Tr>
-            );
-          })}
-        </Tbody>
-      </Table>
-    </TableContainer>
+    <>
+      <TableContainer>
+        <Box overflowX="auto">
+          <Input
+            placeholder="Filtrar por nombre de cliente"
+            value={filters.nombreCliente}
+            onChange={(e) => handleFilterChange(e, "nombreCliente")}
+            mb={2}
+          />
+        </Box>
+        <Box overflowX="auto">
+          <Input
+            placeholder="Filtrar por restaurante"
+            value={filters.restaurante}
+            onChange={(e) => handleFilterChange(e, "restaurante")}
+            mb={2}
+          />
+        </Box>
+        <Box overflowX="auto">
+          <Input
+            placeholder="Filtrar por fecha"
+            value={filters.fecha}
+            onChange={(e) => handleFilterChange(e, "fecha")}
+            mb={4}
+          />
+        </Box>
+        <Table variant="simple">
+          <TableCaption>
+            {filteredData.length === 0
+              ? "No hay reservas"
+              : "Reservas Disponibles"}
+          </TableCaption>
+          <Thead>
+            <Tr>
+              <Th>Reservado por</Th>
+              <Th>Restaurante</Th>
+              <Th>Mesa</Th>
+              <Th>Cantidad de Personas</Th>
+              <Th>Fecha</Th>
+              <Th>Hora Inicio</Th>
+              <Th>Hora Fin</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {filteredData.map((reserva) => {
+              console.log("reserva");
+              console.log(reserva);
+              return (
+                <Tr key={reserva.id}>
+                  <Td>
+                    {reserva.cliente.nombre + " " + reserva.cliente.apellido}
+                  </Td>
+                  <Td>{reserva.restaurante.nombre}</Td>
+                  <Td>{reserva.mesa.nombre}</Td>
+                  <Td>{reserva.cantidad_personas}</Td>
+                  <Td>{new Date(reserva.fecha).toISOString().split("T")[0]}</Td>
+                  <Td>
+                    {
+                      new Date(reserva.hora_inicio)
+                        .toISOString()
+                        .split("T")[1]
+                        .split(".")[0]
+                    }
+                  </Td>
+                  <Td>
+                    {
+                      new Date(reserva.hora_fin)
+                        .toISOString()
+                        .split("T")[1]
+                        .split(".")[0]
+                    }
+                  </Td>
+                </Tr>
+              );
+            })}
+          </Tbody>
+        </Table>
+      </TableContainer>
+    </>
   ) : (
     <Center>No hay reservas</Center>
   );

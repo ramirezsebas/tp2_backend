@@ -154,6 +154,7 @@ export default async function handler(
             include: {
               mesa: true,
               cliente: true,
+              restaurante: true,
             },
             where: {
               id_restaurante: parseInt(idRestaurante),
