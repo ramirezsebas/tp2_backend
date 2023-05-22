@@ -352,6 +352,33 @@ export default function Mesas() {
           setAction(Action.NONE);
         }}
       />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(100, 1fr)",
+          gridTemplateRows: "repeat(100, 1fr)",
+        }}
+      >
+        {mesas.map((mesa) => (
+          <div
+            key={mesa.id}
+            style={{
+              gridColumnStart: mesa.posicion_x,
+              gridColumnEnd: mesa.posicion_x + 1,
+              gridRowStart: mesa.posicion_y,
+              gridRowEnd: mesa.posicion_y + 1,
+              backgroundColor: "blue",
+              color: "white",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              border: "1px solid white",
+            }}
+          >
+            {mesa.nombre}
+          </div>
+        ))}
+      </div>
     </>
   );
 }
