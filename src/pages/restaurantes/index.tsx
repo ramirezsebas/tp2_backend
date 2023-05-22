@@ -227,12 +227,19 @@ export default function Restaurantes() {
       {/* //Create a button that says Crear Reseva */}
 
       <Box position="fixed" top="0" right="0" m={4}>
+        <Link href="/crear-reserva">
+          <Button colorScheme="blue" variant="outline">
+            Crear Reserva
+          </Button>
+        </Link>
+      </Box>
+      {/* <Box position="fixed" top="0" right="0" m={4}>
         <Button colorScheme="blue" variant="outline" onClick={onOpen}>
           Crear Reservar
         </Button>
-      </Box>
+      </Box> */}
 
-      <Modal isOpen={isOpen} onClose={onClose}>
+      {/* <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent maxW="50vw" maxH="90vh">
           <ModalHeader>Crear Reserva</ModalHeader>
@@ -246,7 +253,7 @@ export default function Restaurantes() {
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Modal> */}
 
       {error && (
         <Box position="fixed" top="0" right="0" m={4}>

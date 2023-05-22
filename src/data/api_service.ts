@@ -2,10 +2,12 @@ const BASE_URL = "http://localhost:3000/api";
 export class ApiService {
   async get(path: string) {
     const response = await fetch(`${BASE_URL}${path}`);
+
+    const data = await response.json();
     if (response.status >= 400 && response.status < 600) {
-      throw new Error(response.statusText);
+      throw new Error(data?.message ?? response.statusText);
     }
-    return response.json();
+    return data;
   }
 
   async post(path: string, body: any) {
@@ -17,11 +19,14 @@ export class ApiService {
       body: JSON.stringify(body),
     });
 
+    const data = await response.json();
+
     if (response.status >= 400 && response.status < 600) {
-      throw new Error(response.statusText);
+      console.log(response);
+      throw new Error(data?.message ?? response.statusText);
     }
 
-    return response.json();
+    return data;
   }
 
   async put(path: string, body: any) {
@@ -33,11 +38,13 @@ export class ApiService {
       body: JSON.stringify(body),
     });
 
+    const data = await response.json();
+
     if (response.status >= 400 && response.status < 600) {
-      throw new Error(response.statusText);
+      throw new Error(data?.message ?? response.statusText);
     }
 
-    return response.json();
+    return data;
   }
 
   async delete(path: string) {
@@ -48,9 +55,11 @@ export class ApiService {
       },
     });
 
+    const data = await response.json();
+
     if (response.status >= 400 && response.status < 600) {
-      throw new Error(response.statusText);
+      throw new Error(data?.message ?? response.statusText);
     }
-    return response.json();
+    return data;
   }
 }

@@ -206,9 +206,6 @@ export default async function handler(
           },
         });
 
-        console.log("restaurannte");
-        console.log(restaurannte);
-
         if (!restaurannte) {
           res.status(400).json({
             message: "El restaurante no existe",
@@ -220,9 +217,6 @@ export default async function handler(
         let posicionY = Number(posicion_y);
         let capacidadMesa = Number(capacidad);
         let plantaMesa = Number(planta);
-
-        console.log("posicionX");
-        console.log(posicionX);
 
         if (isNaN(posicionX)) {
           res.status(400).json({
@@ -252,9 +246,6 @@ export default async function handler(
           return;
         }
 
-        console.log("posicionX");
-        console.log(posicionX);
-
         prisma.mesa
           .create({
             data: {
@@ -281,7 +272,6 @@ export default async function handler(
               error: error,
             });
           });
-        console.log("FIN");
         return;
       }
 
@@ -292,12 +282,13 @@ export default async function handler(
       if (reservas && !mesas && !idMesas) {
         const { id_mesa, cedula, fecha, hora_fin, hora_inicio } = req.body;
 
+        console.log(req.body);
+
         if (!id_mesa || !cedula || !fecha || !hora_inicio || !hora_fin) {
-          res.status(400).json({
+          return res.status(400).json({
             message:
               "Por favor ingresa id_mesa, id_cliente, fecha, hora_inicio, hora_fin y cantidad",
           });
-          return;
         }
 
         let mesa = await prisma.mesa.findFirst({
@@ -307,30 +298,19 @@ export default async function handler(
         });
 
         if (!mesa) {
-          res.status(400).json({
+          return res.status(400).json({
             message: "La mesa no existe",
           });
-          return;
         }
-
-        console.log("mesa");
-        console.log(mesa);
 
         const cantidad = mesa.capacidad;
 
         if (mesa.capacidad < cantidad) {
-          res.status(400).json({
+          return res.status(400).json({
             message:
               "La cantidad de personas es mayor a la capacidad de la mesa",
           });
-          return;
         }
-
-        console.log("mesa Capacidad");
-        console.log(mesa.capacidad);
-
-        console.log("cedula");
-        console.log(cedula);
 
         let cliente = await prisma.cliente.findFirst({
           where: {
@@ -338,48 +318,18 @@ export default async function handler(
           },
         });
 
-        console.log("clientetest");
-        console.log(cliente);
-
         if (!cliente) {
-          res.status(400).json({
+          return res.status(400).json({
             message: "El cliente no existe",
           });
-          return;
         }
-
-        console.log("cliente");
-        console.log(cliente);
 
         let fechaReserva = new Date(fecha);
 
-        console.log("hora_inicio");
-        console.log(hora_inicio);
-
-        console.log("hora_fin");
-        console.log(hora_fin);
-
-        let reservas = await prisma.reserva.findMany({
-          where: {
-            id_mesa: parseInt(id_mesa),
-            fecha: fechaReserva,
-            hora_inicio: hora_inicio,
-            hora_fin: hora_fin,
-          },
-        });
-
-        if (reservas.length > 0) {
-          res.status(400).json({
-            message: "La mesa ya esta reservada para ese horario",
-          });
-          return;
-        }
-
         if (hora_inicio == hora_fin) {
-          res.status(400).json({
+          return res.status(400).json({
             message: "La hora de inicio y fin no pueden ser iguales",
           });
-          return;
         }
 
         let reservass = await prisma.reserva.findMany({
@@ -391,14 +341,19 @@ export default async function handler(
 
         reservass.filter((reserva) => {
           if (
-            (hora_inicio >= reserva.hora_inicio &&
-              hora_inicio <= reserva.hora_fin) ||
-            (hora_fin >= reserva.hora_inicio && hora_fin <= reserva.hora_fin)
+            (new Date(hora_inicio) >= reserva.hora_inicio &&
+              new Date(hora_inicio) <= reserva.hora_fin) ||
+            (new Date(hora_fin) >= reserva.hora_inicio &&
+              new Date(hora_fin) <= reserva.hora_fin)
           ) {
-            res.status(400).json({
-              message: "La mesa ya esta reservada para ese horario",
+            return res.status(400).json({
+              message:
+                "La mesa ya esta reservada entre las" +
+                reserva.hora_inicio +
+                " y las " +
+                reserva.hora_fin +
+                " horas",
             });
-            return;
           }
         });
 
@@ -415,10 +370,9 @@ export default async function handler(
           },
         });
 
-        res.status(200).json({
+        return res.status(200).json({
           message: "Reserva creada exitosamente",
         });
-        console.log("FIN");
       }
       break;
 
