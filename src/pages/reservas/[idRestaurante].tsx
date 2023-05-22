@@ -105,7 +105,7 @@ export default function Reservas() {
       setAction(Action.NONE);
     } catch (error) {
       console.log(error);
-      setError("Ocurrio un error al crear el reserva");
+      setError(error?.message ?? "Ocurrio un error al crear el reserva");
     }
   };
 
@@ -130,7 +130,7 @@ export default function Reservas() {
       })
       .catch((error) => {
         setLoadingReservas(false);
-        setError("Ocurrio un error al obtener los reservas");
+        setError(error?.message ?? "Ocurrio un error al obtener los reservas");
         setTimeout(() => {
           setError("");
         }, 5000);
@@ -252,12 +252,6 @@ export default function Reservas() {
         </Heading>
       </Center>
       {body}
-      <FloatingActionButton
-        onClick={() => {
-          setAction(Action.CREATE);
-          resetForm();
-        }}
-      />
 
       {error && (
         <Box position="fixed" top="0" right="0" m={4}>

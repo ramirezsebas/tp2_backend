@@ -359,55 +359,14 @@ export default async function handler(
         console.log("hora_fin");
         console.log(hora_fin);
 
-        let horaInicioDate = new Date(hora_inicio);
-        let horaFinDate = new Date(hora_fin);
-
-        console.log("fechaReserva");
-        console.log(fechaReserva);
-
-        console.log("horaInicioDate");
-        console.log(
-          horaInicioDate.getUTCHours() +
-            ":" +
-            horaInicioDate.getUTCMinutes() +
-            ":" +
-            horaInicioDate.getUTCSeconds()
-        );
-
-        console.log("horaFinDate");
-        console.log(
-          horaFinDate.getUTCHours() +
-            ":" +
-            horaFinDate.getUTCMinutes() +
-            ":" +
-            horaFinDate.getUTCSeconds()
-        );
-
-        console.log("horaInicioDate time");
-        console.log(horaInicioDate.getTime());
-
-        console.log("horaFinDate time");
-        console.log(horaFinDate.getTime());
-
         let reservas = await prisma.reserva.findMany({
           where: {
             id_mesa: parseInt(id_mesa),
             fecha: fechaReserva,
-            hora_inicio: {
-              gte: hora_fin,
-              lt: hora_fin,
-            },
-            hora_fin: {
-              gt: hora_inicio,
-              lte: hora_fin,
-            },
+            hora_inicio: hora_inicio,
+            hora_fin: hora_fin,
           },
         });
-
-        console.log("reservas1212");
-        console.log(reservas);
-
-        console.log(reservas);
 
         if (reservas.length > 0) {
           res.status(400).json({
@@ -415,6 +374,33 @@ export default async function handler(
           });
           return;
         }
+
+        if (hora_inicio == hora_fin) {
+          res.status(400).json({
+            message: "La hora de inicio y fin no pueden ser iguales",
+          });
+          return;
+        }
+
+        let reservass = await prisma.reserva.findMany({
+          where: {
+            id_mesa: parseInt(id_mesa),
+            fecha: fechaReserva,
+          },
+        });
+
+        reservass.filter((reserva) => {
+          if (
+            (hora_inicio >= reserva.hora_inicio &&
+              hora_inicio <= reserva.hora_fin) ||
+            (hora_fin >= reserva.hora_inicio && hora_fin <= reserva.hora_fin)
+          ) {
+            res.status(400).json({
+              message: "La mesa ya esta reservada para ese horario",
+            });
+            return;
+          }
+        });
 
         await prisma.reserva.create({
           data: {

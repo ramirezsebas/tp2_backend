@@ -109,7 +109,9 @@ const CrearReserva = () => {
       })
       .catch((error) => {
         setLoadingRestaurantes(false);
-        setError("Ocurrio un error al obtener los restaurantes");
+        setError(
+          error?.message ?? "Ocurrio un error al obtener los restaurantes"
+        );
         setTimeout(() => {
           setError("");
         }, 5000);
@@ -126,7 +128,7 @@ const CrearReserva = () => {
       })
       .catch((error) => {
         setLoadingClientes(false);
-        setError("Ocurrio un error al obtener los clientes");
+        setError(error?.message ?? "Ocurrio un error al obtener los clientes");
         setTimeout(() => {
           setError("");
         }, 5000);
@@ -350,7 +352,7 @@ const CrearReserva = () => {
         setShowCrearCliente(false);
       } catch (error) {
         console.log(error);
-        setError("Ocurrio un error al crear el cliente");
+        setError(error?.message ?? "Ocurrio un error al crear el cliente");
         setTimeout(() => {
           setError("");
         }, 5000);
@@ -377,7 +379,7 @@ const CrearReserva = () => {
         router.replace(`/restaurantes`);
       })
       .catch((error) => {
-        setError("Ocurrio un error al crear la reserva");
+        setError(error?.message ?? "Ocurrio un error al crear la reserva");
         setTimeout(() => {
           setError("");
         }, 5000);
