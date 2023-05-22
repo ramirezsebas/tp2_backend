@@ -348,11 +348,11 @@ export default async function handler(
           ) {
             return res.status(400).json({
               message:
-                "La mesa ya esta reservada entre las" +
-                reserva.hora_inicio +
+                "La mesa ya esta reservada entre las " +
+                reserva.hora_inicio.toLocaleString() +
                 " y las " +
-                reserva.hora_fin +
-                " horas",
+                reserva.hora_fin.toLocaleString() +
+                " horas.",
             });
           }
         });

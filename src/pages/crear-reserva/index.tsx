@@ -204,6 +204,42 @@ const CrearReserva2 = () => {
     DisabledInterval[]
   >([]);
 
+  useEffect(() => {
+    console.log("mesa");
+    console.log(mesa);
+    console.log("selectedRestaurant");
+    console.log(selectedRestaurant);
+    console.log("selectedDate");
+    console.log(selectedDate);
+    if (selectedRestaurant && selectedDate && mesa) {
+      api
+        .get(`/restaurantes/${selectedRestaurant.id}/reservas`)
+        .then((reservas: Reserva[]) => {
+          console.log("reservas");
+          console.log(reservas);
+          // Filter the reservations based on the selected date and table
+          const filteredReservas: Reserva[] = reservas.filter(
+            (reserva) =>
+              new Date(reserva.fecha).toISOString().slice(0, 10) ===
+                new Date(selectedDate).toISOString().slice(0, 10) &&
+              reserva.mesa.id.toString() === mesa
+          );
+          console.log("Se actualiza en el filteredReservas");
+          console.log(filteredReservas);
+          updateDisabledIntervals(selectedDate, filteredReservas);
+        })
+        .catch((error) => {
+          setError(
+            error?.message ??
+              "Ocurrio un error al obtener las reservas del restaurante"
+          );
+          setTimeout(() => {
+            setError("");
+          }, 5000);
+        });
+    }
+  }, [selectedRestaurant, selectedDate, mesa]);
+
   const [errorState, setErrorState] = useState<boolean>(false);
 
   const errorHandler = ({ error }: UpdateCallbackData) => {
@@ -216,11 +252,7 @@ const CrearReserva2 = () => {
 
   const updateDisabledIntervals = (
     selectedDate: Date,
-    restaurantReservations: {
-      id: number;
-      fecha: Date;
-      intervalo: DisabledInterval;
-    }[]
+    restaurantReservations: Reserva[]
   ) => {
     setDisabledIntervals([]);
     restaurantReservations.forEach((reserva) => {
@@ -228,21 +260,23 @@ const CrearReserva2 = () => {
         new Date(reserva.fecha).toISOString().slice(0, 10) ===
         new Date(selectedDate).toISOString().slice(0, 10)
       ) {
-        if (reserva.intervalo) {
-          const tableColor =
-            tableColors[parseInt(reserva.intervalo.id)] ||
-            randomColor({ alpha: 0.1 });
-          if (!tableColors[parseInt(reserva.intervalo.id)]) {
-            setTableColors((prevTableColors) => ({
-              ...prevTableColors,
-              [parseInt(reserva.intervalo.id)]: tableColor,
-            }));
-          }
-          setDisabledIntervals((prevDisabledIntervals) => [
-            ...prevDisabledIntervals,
-            { ...reserva.intervalo, color: tableColor },
-          ]);
+        const tableColor =
+          tableColors[reserva.id] || randomColor({ alpha: 0.1 });
+        if (!tableColors[reserva.id]) {
+          setTableColors((prevTableColors) => ({
+            ...prevTableColors,
+            [reserva.id]: tableColor,
+          }));
         }
+        setDisabledIntervals((prevDisabledIntervals) => [
+          ...prevDisabledIntervals,
+          {
+            id: reserva.id.toString(),
+            start: new Date(reserva.hora_inicio),
+            end: new Date(reserva.hora_fin),
+            color: tableColor,
+          },
+        ]);
       }
     });
   };
@@ -413,7 +447,7 @@ const CrearReserva2 = () => {
             </Text>
             <form onSubmit={handleSubmit}>
               <Stack spacing={4}>
-                <FormControl id="restaurant">
+                <FormControl id="restaurant" isRequired>
                   <FormLabel>Restaurantes disponibles</FormLabel>
                   <Select
                     placeholder="Selecciona un restaurante"
@@ -423,12 +457,13 @@ const CrearReserva2 = () => {
                         restaurants.at(e.target.selectedIndex - 1)
                       );
                       setName(e.target.value);
+                      console.log("Se actualizo en el select de restaurantes");
                       updateDisabledIntervals(
                         selectedDate,
-                        restaurants.at(e.target.selectedIndex - 1)?.reservas ||
-                          []
+                        restaurants.at(e.target.selectedIndex - 1)?.reservas
                       );
                     }}
+                    required
                   >
                     {restaurants.map((restaurante) => (
                       <option key={restaurante.id} value={restaurante.nombre}>
@@ -437,13 +472,14 @@ const CrearReserva2 = () => {
                     ))}
                   </Select>
                 </FormControl>
-                <FormControl id="date">
+                <FormControl id="date" isRequired>
                   <FormLabel>Fecha de reserva</FormLabel>
                   <SingleDatepicker
                     date={selectedDate}
                     onDateChange={(date: any) => {
                       setSelectedDate(date);
                       if (selectedRestaurant != null) {
+                        console.log("Se actualizo en el datepicker");
                         updateDisabledIntervals(
                           date,
                           selectedRestaurant.reservas
@@ -453,7 +489,7 @@ const CrearReserva2 = () => {
                     name="date"
                   />
                 </FormControl>
-                <FormControl id="timeRange">
+                <FormControl id="timeRange" isRequired>
                   <FormLabel>Hora de reserva</FormLabel>
                   <TimeRange
                     selectedInterval={selectedInterval}
@@ -473,9 +509,14 @@ const CrearReserva2 = () => {
                   </Text>
                 </FormControl>
                 {selectedRestaurant && (
-                  <FormControl id="tables">
+                  <FormControl id="tables" isRequired>
                     <FormLabel>Mesas</FormLabel>
-                    <Select value={mesa} onChange={handleMesaChange} mb={4}>
+                    <Select
+                      value={mesa}
+                      onChange={handleMesaChange}
+                      mb={4}
+                      required
+                    >
                       <option value="">Select an option</option>
                       {selectedRestaurant?.mesas.map((mesa) => (
                         <option key={mesa.id} value={mesa.id}>
@@ -485,7 +526,7 @@ const CrearReserva2 = () => {
                     </Select>
                   </FormControl>
                 )}
-                <FormControl id="id">
+                <FormControl id="id" isRequired>
                   <FormLabel>CI / RUC</FormLabel>
                   <Select
                     value={cedula}
@@ -494,6 +535,7 @@ const CrearReserva2 = () => {
                       setShowCrearCliente(e.target.value === "0");
                     }}
                     placeholder="Eliga un cliente"
+                    required
                   >
                     {clientes.map((cliente) => (
                       <option key={cliente.id} value={cliente.cedula}>
@@ -504,7 +546,7 @@ const CrearReserva2 = () => {
                           cliente.apellido}
                       </option>
                     ))}
-                    <option value="0">Nuevo Cliente</option>
+                    <option value={cedula ? cedula : "0"}>Nuevo Cliente</option>
                   </Select>
                   {showCrearCliente && (
                     <CrearCliente
