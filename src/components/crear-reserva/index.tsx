@@ -24,8 +24,9 @@ import { set, startOfToday, startOfDay, endOfDay } from "date-fns";
 import { SingleDatepicker } from "chakra-dayzed-datepicker";
 import randomColor from "randomcolor";
 import { ApiService } from "@/data/api_service";
-import { Reserva, Restaurante } from "@prisma/client";
+import { Cliente, Reserva, Restaurante } from "@prisma/client";
 import { Router, useRouter } from "next/router";
+import CrearCliente from "@/components/crear_cliente";
 
 const api = new ApiService();
 
@@ -94,6 +95,8 @@ const CrearReserva = () => {
   const [capacidad, setCapacidad] = useState<string>("");
   const [cedula, setCedula] = useState<string>("");
   const router = useRouter();
+  const [clientes, setClientes] = React.useState<Cliente[]>([]);
+  const [loadingClientes, setLoadingClientes] = React.useState<boolean>(false);
 
   useEffect(() => {
     api
@@ -113,11 +116,32 @@ const CrearReserva = () => {
       });
   }, []);
 
-  const handleCiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    setLoadingClientes(true);
+    api
+      .get(`/clientes`)
+      .then((response) => {
+        setLoadingClientes(false);
+        setClientes(response);
+      })
+      .catch((error) => {
+        setLoadingClientes(false);
+        setError("Ocurrio un error al obtener los clientes");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+      });
+  }, []);
+
+  const handleCiChange = (e: {
+    target: { value: React.SetStateAction<string> };
+  }) => {
     setCedula(e.target.value);
   };
 
-  const handleMesaChange = (event) => {
+  const handleMesaChange = (event: {
+    target: { value: React.SetStateAction<string> };
+  }) => {
     setMesa(event.target.value);
   };
 
@@ -135,6 +159,13 @@ const CrearReserva = () => {
     selectedStart,
     selectedEnd,
   ]);
+  const [showCrearCliente, setShowCrearCliente] = useState<boolean>(false);
+  const [clienteData, setClienteData] = useState({
+    nombre: "",
+    apellido: "",
+    cedula: 0,
+    // Add other fields as necessary
+  });
 
   useEffect(() => {
     setStartTime(startOfDay(selectedDate));
@@ -191,19 +222,21 @@ const CrearReserva = () => {
         new Date(reserva.fecha).toISOString().slice(0, 10) ===
         new Date(selectedDate).toISOString().slice(0, 10)
       ) {
-        const tableColor =
-          tableColors[parseInt(reserva.intervalo.id)] ||
-          randomColor({ alpha: 0.1 });
-        if (!tableColors[parseInt(reserva.intervalo.id)]) {
-          setTableColors((prevTableColors) => ({
-            ...prevTableColors,
-            [parseInt(reserva.intervalo.id)]: tableColor,
-          }));
+        if (reserva.intervalo) {
+          const tableColor =
+            tableColors[parseInt(reserva.intervalo.id)] ||
+            randomColor({ alpha: 0.1 });
+          if (!tableColors[parseInt(reserva.intervalo.id)]) {
+            setTableColors((prevTableColors) => ({
+              ...prevTableColors,
+              [parseInt(reserva.intervalo.id)]: tableColor,
+            }));
+          }
+          setDisabledIntervals((prevDisabledIntervals) => [
+            ...prevDisabledIntervals,
+            { ...reserva.intervalo, color: tableColor },
+          ]);
         }
-        setDisabledIntervals((prevDisabledIntervals) => [
-          ...prevDisabledIntervals,
-          { ...reserva.intervalo, color: tableColor },
-        ]);
       }
     });
   };
@@ -228,7 +261,7 @@ const CrearReserva = () => {
 
   const [tableColors, setTableColors] = useState<{ [key: number]: string }>({});
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("submit");
 
@@ -306,13 +339,32 @@ const CrearReserva = () => {
       return;
     }
 
+    if (showCrearCliente) {
+      try {
+        const newClient = await api.post("/clientes", clienteData);
+        // Update the clientes state with the new client
+        setClientes((prevClientes) => [...prevClientes, newClient]);
+        // Update the cedula state with the new client's cedula
+        setCedula(newClient.cedula.toString());
+        // Hide the CrearCliente component
+        setShowCrearCliente(false);
+      } catch (error) {
+        console.log(error);
+        setError("Ocurrio un error al crear el cliente");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+        return;
+      }
+    }
+
     api
       .post(`/restaurantes/${selectedRestaurant.id}/reservas`, {
         id_mesa: mesa,
         cedula: cedula,
         fecha: selectedDate,
-        hora_fin: selectedInterval[0].toISOString(),
-        hora_inicio: selectedInterval[1].toISOString(),
+        hora_fin: selectedInterval[1].toISOString(),
+        hora_inicio: selectedInterval[0].toISOString(),
       })
       .then((response) => {
         console.log("response");
@@ -350,7 +402,7 @@ const CrearReserva = () => {
   console.log(restaurants);
 
   return (
-    <Box height={"100vh"} paddingTop={"10"}>
+    <Box paddingTop={"10"}>
       <Center>
         <Stack spacing={4} w={"70%"}>
           <Text fontSize={"2xl"} fontWeight={"bold"}>
@@ -431,7 +483,32 @@ const CrearReserva = () => {
               )}
               <FormControl id="id">
                 <FormLabel>CI / RUC</FormLabel>
-                <Input value={cedula} type="text" onChange={handleCiChange} />
+                <Select
+                  value={cedula}
+                  onChange={(e) => {
+                    handleCiChange(e);
+                    setShowCrearCliente(e.target.value === "0");
+                  }}
+                  placeholder="Eliga un cliente"
+                >
+                  {clientes.map((cliente) => (
+                    <option key={cliente.id} value={cliente.cedula}>
+                      {cliente.cedula +
+                        "-" +
+                        cliente.nombre +
+                        " " +
+                        cliente.apellido}
+                    </option>
+                  ))}
+                  <option value="0">Nuevo Cliente</option>
+                </Select>
+                {showCrearCliente && (
+                  <CrearCliente
+                    clienteData={clienteData}
+                    setClienteData={setClienteData}
+                    setCedula={setCedula}
+                  />
+                )}
               </FormControl>
               <Button type="submit" colorScheme="blue">
                 Crear Reserva

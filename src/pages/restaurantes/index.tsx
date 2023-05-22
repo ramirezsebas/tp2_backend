@@ -6,6 +6,7 @@ import {
   Thead,
   Tbody,
   Tfoot,
+  Text,
   Tr,
   Th,
   Td,
@@ -30,13 +31,22 @@ import {
   AlertTitle,
   Box,
   Center,
-  Link,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { Restaurante } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
 import SpinnerLoading from "@/components/spinner";
 import { ApiService } from "@/data/api_service";
 import { MoreOptionsDialog } from "@/components/more_options_dialog";
+import Link from "next/link";
+import CrearReserva from "@/components/crear-reserva";
 
 enum Action {
   NONE = "NONE",
@@ -58,6 +68,7 @@ export default function Restaurantes() {
   const [name, setName] = useState("");
   const [direccion, setDireccion] = useState("");
   const [error, setError] = useState("");
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -216,12 +227,26 @@ export default function Restaurantes() {
       {/* //Create a button that says Crear Reseva */}
 
       <Box position="fixed" top="0" right="0" m={4}>
-        <Link href={`/crear-reserva`}>
-          <Button colorScheme="blue" variant="outline">
-            Crear Reservar
-          </Button>
-        </Link>
+        <Button colorScheme="blue" variant="outline" onClick={onOpen}>
+          Crear Reservar
+        </Button>
       </Box>
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent maxW="50vw" maxH="90vh">
+          <ModalHeader>Crear Reserva</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <CrearReserva />
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {error && (
         <Box position="fixed" top="0" right="0" m={4}>
