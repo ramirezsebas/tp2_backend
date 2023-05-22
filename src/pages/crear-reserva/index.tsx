@@ -1,6 +1,6 @@
 // Simple reservation creation page with a form and a map with no api calls
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Alert,
   AlertDescription,
@@ -15,6 +15,8 @@ import {
   Input,
   List,
   ListItem,
+  Radio,
+  RadioGroup,
   Select,
   Stack,
   Text,
@@ -34,34 +36,6 @@ import CrearCliente from "@/components/crear_cliente";
 
 const api = new ApiService();
 
-interface Intervalo {
-  id: string;
-  start: Date;
-  end: Date;
-}
-
-// interface Mesa {
-//   id: number;
-//   numSeats: number;
-// }
-
-// interface Reserva {
-//   id: number;
-//   fecha: Date;
-//   intervalo: Intervalo;
-//   mesasReservadas: number[];
-// }
-
-// interface Restaurante {
-//   id: number;
-//   name: string;
-//   address: string;
-//   phone: string;
-//   email: string;
-//   reservas: Reserva[];
-//   mesas: Mesa[];
-// }
-
 interface CircleIconProps {
   color: string;
 }
@@ -77,15 +51,6 @@ const CircleIcon: React.FC<CircleIconProps> = ({ color }) => {
     />
   );
 };
-
-const cedulas = [
-  "123456789",
-  "987654321",
-  "123456789",
-  "987654321",
-  "123456789",
-  "987654321",
-];
 
 const CrearReserva2 = () => {
   const [name, setName] = useState<string>("");
@@ -204,14 +169,13 @@ const CrearReserva2 = () => {
     DisabledInterval[]
   >([]);
 
+  // useEffect para los disabledIntervals
   useEffect(() => {
-    console.log("mesa");
-    console.log(mesa);
     console.log("selectedRestaurant");
     console.log(selectedRestaurant);
     console.log("selectedDate");
     console.log(selectedDate);
-    if (selectedRestaurant && selectedDate && mesa) {
+    if (selectedRestaurant && selectedDate) {
       api
         .get(`/restaurantes/${selectedRestaurant.id}/reservas`)
         .then((reservas: Reserva[]) => {
@@ -221,8 +185,7 @@ const CrearReserva2 = () => {
           const filteredReservas: Reserva[] = reservas.filter(
             (reserva) =>
               new Date(reserva.fecha).toISOString().slice(0, 10) ===
-                new Date(selectedDate).toISOString().slice(0, 10) &&
-              reserva.mesa.id.toString() === mesa
+              new Date(selectedDate).toISOString().slice(0, 10)
           );
           console.log("Se actualiza en el filteredReservas");
           console.log(filteredReservas);
@@ -238,7 +201,7 @@ const CrearReserva2 = () => {
           }, 5000);
         });
     }
-  }, [selectedRestaurant, selectedDate, mesa]);
+  }, [selectedRestaurant, selectedDate]);
 
   const [errorState, setErrorState] = useState<boolean>(false);
 
@@ -260,23 +223,29 @@ const CrearReserva2 = () => {
         new Date(reserva.fecha).toISOString().slice(0, 10) ===
         new Date(selectedDate).toISOString().slice(0, 10)
       ) {
-        const tableColor =
-          tableColors[reserva.id] || randomColor({ alpha: 0.1 });
-        if (!tableColors[reserva.id]) {
-          setTableColors((prevTableColors) => ({
-            ...prevTableColors,
-            [reserva.id]: tableColor,
-          }));
+        if (reserva.mesa) {
+          // Check if mesa exists
+          // Check if we already have a color for this table
+          if (!tableColors[reserva.mesa.id]) {
+            // If not, generate a new color and save it
+            const newColor = randomColor({ alpha: 0.5 });
+            setTableColors((prevTableColors) => ({
+              ...prevTableColors,
+              [reserva.mesa.id]: newColor,
+            }));
+          }
+          // Now we can be sure that we have a color for this table
+          const tableColor = tableColors[reserva.mesa.id];
+          setDisabledIntervals((prevDisabledIntervals) => [
+            ...prevDisabledIntervals,
+            {
+              id: reserva.id.toString(),
+              start: new Date(reserva.hora_inicio),
+              end: new Date(reserva.hora_fin),
+              color: tableColor,
+            },
+          ]);
         }
-        setDisabledIntervals((prevDisabledIntervals) => [
-          ...prevDisabledIntervals,
-          {
-            id: reserva.id.toString(),
-            start: new Date(reserva.hora_inicio),
-            end: new Date(reserva.hora_fin),
-            color: tableColor,
-          },
-        ]);
       }
     });
   };
@@ -284,20 +253,46 @@ const CrearReserva2 = () => {
   // Mesas vars
   const isTableAvailable = (
     tableId: number,
-    restaurantReservations: Reserva[],
+    selectedRestaurant: Restaurante,
     selectedInterval: [Date, Date]
   ): boolean => {
-    for (const reserva of restaurantReservations) {
+    // Filter the reservations for the specific table
+    const tableReservations: Reserva[] = selectedRestaurant.reservas.filter(
+      (reserva: Reserva) => reserva.id_mesa === tableId
+    );
+
+    for (const reserva of tableReservations) {
+      console.log("reserva");
+      console.log(reserva);
+      console.log("selectedInterval");
+      console.log(selectedInterval);
       if (
-        reserva.hora_inicio < selectedInterval[1] &&
-        reserva.hora_fin > selectedInterval[0] &&
-        reserva.mesas.includes(tableId)
+        (new Date(reserva.hora_inicio) < selectedInterval[0] &&
+          new Date(reserva.hora_fin) > selectedInterval[0]) ||
+        (new Date(reserva.hora_inicio) < selectedInterval[1] &&
+          new Date(reserva.hora_fin) > selectedInterval[1]) ||
+        (new Date(reserva.hora_inicio) >= selectedInterval[0] &&
+          new Date(reserva.hora_fin) <= selectedInterval[1])
       ) {
+        if (mesa === reserva.id_mesa.toString()) {
+          setMesa("");
+        }
         return false;
       }
     }
     return true;
   };
+
+  const availableTables = useMemo(() => {
+    return selectedRestaurant?.mesas.map((mesa) => ({
+      ...mesa,
+      isAvailable: isTableAvailable(
+        mesa.id,
+        selectedRestaurant,
+        selectedInterval
+      ),
+    }));
+  }, [selectedRestaurant, selectedInterval]);
 
   const [tableColors, setTableColors] = useState<{ [key: number]: string }>({});
 
@@ -457,11 +452,6 @@ const CrearReserva2 = () => {
                         restaurants.at(e.target.selectedIndex - 1)
                       );
                       setName(e.target.value);
-                      console.log("Se actualizo en el select de restaurantes");
-                      updateDisabledIntervals(
-                        selectedDate,
-                        restaurants.at(e.target.selectedIndex - 1)?.reservas
-                      );
                     }}
                     required
                   >
@@ -478,13 +468,6 @@ const CrearReserva2 = () => {
                     date={selectedDate}
                     onDateChange={(date: any) => {
                       setSelectedDate(date);
-                      if (selectedRestaurant != null) {
-                        console.log("Se actualizo en el datepicker");
-                        updateDisabledIntervals(
-                          date,
-                          selectedRestaurant.reservas
-                        );
-                      }
                     }}
                     name="date"
                   />
@@ -511,21 +494,22 @@ const CrearReserva2 = () => {
                 {selectedRestaurant && (
                   <FormControl id="tables" isRequired>
                     <FormLabel>Mesas</FormLabel>
-                    <Select
-                      value={mesa}
-                      onChange={handleMesaChange}
-                      mb={4}
-                      required
-                    >
-                      <option value="">Select an option</option>
-                      {selectedRestaurant?.mesas.map((mesa) => (
-                        <option key={mesa.id} value={mesa.id}>
-                          {mesa.nombre} - (Capacidad = {mesa.capacidad})
-                        </option>
-                      ))}
-                    </Select>
+                    <RadioGroup onChange={setMesa} value={mesa}>
+                      <Stack spacing={3}>
+                        {availableTables.map((mesa) => (
+                          <Radio
+                            key={mesa.id}
+                            value={mesa.id.toString()}
+                            isDisabled={!mesa.isAvailable}
+                          >
+                            {mesa.nombre} - (Capacidad = {mesa.capacidad})
+                          </Radio>
+                        ))}
+                      </Stack>
+                    </RadioGroup>
                   </FormControl>
                 )}
+
                 <FormControl id="id" isRequired>
                   <FormLabel>CI / RUC</FormLabel>
                   <Select
