@@ -32,12 +32,13 @@ import {
   Center,
   Link,
 } from "@chakra-ui/react";
-import { Mesa } from "@prisma/client";
+import { ConsumoMesa, Mesa } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
 import SpinnerLoading from "@/components/spinner";
 import { ApiService } from "@/data/api_service";
 import { MoreOptionsDialog } from "@/components/more_options_dialog";
 import { useRouter } from "next/router";
+import { set } from "date-fns";
 
 enum Action {
   NONE = "NONE",
@@ -65,6 +66,9 @@ export default function Mesas() {
   const [posicionX, setPosicionX] = useState("");
   const [posicionY, setPosicionY] = useState("");
   const [error, setError] = useState("");
+  const [mesasLibres, setMesasLibres] = useState<Mesa[]>([]);
+  const [openConsumos, setOpenConsumos] = useState(false);
+  const [consumos, setConsumos] = useState<ConsumoMesa[]>([]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -211,6 +215,34 @@ export default function Mesas() {
                 >
                   Eliminar
                 </Button>
+
+                <Button
+                  colorScheme="red"
+                  variant="outline"
+                  onClick={() => {
+                    api
+                      .get(
+                        `/restaurantes/${idRestaurante}/mesas/${mesa.id}/reservas`
+                      )
+                      .then((value) => {
+                        console.log(value);
+                        setMesasLibres(value);
+
+                        if(value.length === 0){
+
+                            setOpenConsumos(true);
+                        }
+                      })
+                      .catch((error) => {
+                        setError("Ocurrio un error al obtener la mesa");
+                        setTimeout(() => {
+                          setError("");
+                        }, 5000);
+                      });
+                  }}
+                >
+                  Ver Consultas
+                </Button>
               </Td>
             </Tr>
           ))}
@@ -246,6 +278,52 @@ export default function Mesas() {
           </Alert>
         </Box>
       )}
+
+      <AlertDialog
+        isOpen={openConsumos}
+        leastDestructiveRef={cancelRef}
+        onClose={() => {
+          setOpenConsumos(false);
+        }}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Consultas
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              <form onSubmit={handleSubmit}>
+                <VStack spacing={4}>
+                  <FormControl isRequired isInvalid={error.length !== 0}>
+                    <FormLabel>Consultas</FormLabel>
+                    {/* <Input
+                      type="text"
+                      placeholder="Consultas"
+                      value={consultas}
+                      onChange={(e) => setConsultas(e.target.value)}
+                    />
+                    <FormErrorMessage>{error}</FormErrorMessage> */}
+                  </FormControl>
+                </VStack>
+              </form>
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setOpenConsumos(false)}>
+                Cancelar
+              </Button>
+              <Button
+                colorScheme="blue"
+                onClick={() => setOpenConsumos(false)}
+                ml={3}
+              >
+                Guardar
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
 
       <AlertDialog
         isOpen={

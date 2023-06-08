@@ -11,32 +11,35 @@ datasource db {
 }
 
 model Restaurante {
-  id        Int       @id @default(autoincrement())
-  nombre    String
-  direccion String
-  mesas     Mesa[]
-  reservas  Reserva[]
+  id          Int           @id @default(autoincrement())
+  nombre      String
+  direccion   String
+  mesas       Mesa[]
+  reservas    Reserva[]
+  ConsumoMesa ConsumoMesa[]
 }
 
 model Cliente {
-  id       Int       @id @default(autoincrement())
-  cedula   String    @unique
-  nombre   String
-  apellido String
-  reserva  Reserva[]
+  id          Int           @id @default(autoincrement())
+  cedula      String        @unique
+  nombre      String
+  apellido    String
+  reserva     Reserva[]
+  ConsumoMesa ConsumoMesa[]
 }
 
 model Mesa {
-  id             Int         @id @default(autoincrement())
+  id             Int           @id @default(autoincrement())
   nombre         String
   direccion      String
-  restaurante    Restaurante @relation(fields: [id_restaurante], references: [id])
+  restaurante    Restaurante   @relation(fields: [id_restaurante], references: [id])
   id_restaurante Int
   posicion_x     Float
   posicion_y     Float
   planta         Int
   capacidad      Int
   reservas       Reserva[]
+  ConsumoMesa    ConsumoMesa[]
 }
 
 model Reserva {
@@ -66,4 +69,25 @@ model Producto {
   categoria    CategoriaProducto @relation(fields: [id_categoria], references: [id])
   id_categoria Int
   precio_venta Float
+  ConsumoMesa  ConsumoMesa[]
+}
+
+model ConsumoMesa {
+  id             Int         @id @default(autoincrement())
+  mesa           Mesa        @relation(fields: [id_mesa], references: [id])
+  id_mesa        Int
+  cliente        Cliente     @relation(fields: [id_cliente], references: [id])
+  id_cliente     Int
+  restaurante    Restaurante @relation(fields: [id_restaurante], references: [id])
+  id_restaurante Int
+  estado         String      @default("abierto")
+  total          Float
+  fechaCreacion  DateTime    @default(now())
+  horaCreacion   DateTime    @default(now())
+  fechaCierra    DateTime
+  horaCierra     DateTime
+
+  producto    Producto @relation(fields: [id_producto], references: [id])
+  id_producto Int
+  cantidad    Int
 }

@@ -31,6 +31,8 @@ export default async function handler(
 
   const isIdRestauranteInteger = isNaN(parsedIdRestaurante);
 
+  const consulta = params.lastIndexOf("consulta");
+
   if (isIdRestauranteInteger) {
     res.status(400).json({ message: "El id debe ser un numero entero" });
     return;
@@ -43,7 +45,7 @@ export default async function handler(
       // Endpoint: /api/restaurantes/[idRestaurante]/mesas/[idMesas]/reservas
 
       //Aca entra si el endpoint es /api/restaurantes/[idRestaurante]/mesas/[idMesas]/reservas
-      if (mesas && idMesas) {
+      if (mesas && idMesas && !consulta) {
         if (mesas !== "mesas") {
           res.status(400).json({ message: "Parametros invalidos" });
           return;
@@ -68,28 +70,77 @@ export default async function handler(
           return;
         }
 
-        prisma.mesa
+        let currentDate = new Date();
+
+        let reservas = await prisma.reserva.findMany({
+          where: {
+            id_mesa: parseInt(idMesas),
+            fecha_creacion: {
+              gte: currentDate,
+            },
+            hora_fin: {
+              gte: currentDate,
+            },
+          },
+          include: {
+            mesa: true,
+            cliente: true,
+            restaurante: true,
+          },
+        });
+
+        console.log("reservas");
+        console.log(reservas);
+
+        res.status(200).json(reservas);
+
+        return;
+      } else if (mesas && idMesas && consulta) {
+        if (mesas !== "mesas") {
+          res.status(400).json({ message: "Parametros invalidos" });
+          return;
+        }
+        if (isNaN(Number(idMesas))) {
+          res
+            .status(400)
+            .json({ message: "El id de la mesa debe ser un numero entero" });
+          return;
+        }
+
+        let restaurante = await prisma.restaurante.findMany({
+          where: {
+            id: parseInt(idRestaurante),
+          },
+        });
+
+        if (restaurante.length === 0) {
+          res.status(400).json({
+            message: `No se encontro el restaurante ${idRestaurante}`,
+          });
+          return;
+        }
+
+        prisma.consumoMesa
           .findMany({
             where: {
-              id: parseInt(idMesas),
-              id_restaurante: parseInt(idRestaurante),
+              id_mesa: parseInt(idMesas),
+            },
+            include: {
+              producto: true,
+              cliente: true,
+              mesa: true,
+              restaurante: true,
             },
           })
           .then((data) => {
-            if (data.length === 0) {
-              res
-                .status(400)
-                .json({ message: `No se encontro la mesa ${idMesas}` });
-            } else {
-              res.status(200).json(data[0]);
-            }
+            res.status(200).json(data);
           })
           .catch((error) => {
-            res
-
-              .status(500)
-              .json({ message: `No se encontro la mesa ${idMesas}` });
+            res.status(500).json({
+              message: `No se encontro el restaurante ${idRestaurante}`,
+            });
           });
+
         return;
       }
 
