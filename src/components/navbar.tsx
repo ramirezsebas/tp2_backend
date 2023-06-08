@@ -39,6 +39,12 @@ export default function NavBar() {
                 <li>
                   <Link href="/clientes">Clientes</Link>
                 </li>
+                <li>
+                  <Link href="/categorias">Categorias</Link>
+                </li>
+                <li>
+                  <Link href="/productos">Productos</Link>
+                </li>
               </ul>
             </DrawerBody>
           </DrawerContent>

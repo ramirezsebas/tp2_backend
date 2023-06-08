@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Restaurante {
-  id        Int    @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   nombre    String
   direccion String
   mesas     Mesa[]
@@ -23,7 +23,7 @@ model Cliente {
   cedula   String    @unique
   nombre   String
   apellido String
-  reserva Reserva[]
+  reserva  Reserva[]
 }
 
 model Mesa {
@@ -40,16 +40,30 @@ model Mesa {
 }
 
 model Reserva {
-  id                Int      @id @default(autoincrement())
+  id                Int         @id @default(autoincrement())
   fecha             DateTime
   hora_inicio       DateTime
   hora_fin          DateTime
-  cliente           Cliente  @relation(fields: [id_cliente], references: [id])
+  cliente           Cliente     @relation(fields: [id_cliente], references: [id])
   id_cliente        Int
-  mesa              Mesa     @relation(fields: [id_mesa], references: [id])
+  mesa              Mesa        @relation(fields: [id_mesa], references: [id])
   id_mesa           Int
   id_restaurante    Int
-  restaurante       Restaurante      @relation(fields: [id_restaurante], references: [id])
+  restaurante       Restaurante @relation(fields: [id_restaurante], references: [id])
   cantidad_personas Int
-  fecha_creacion    DateTime @default(now())
+  fecha_creacion    DateTime    @default(now())
+}
+
+model CategoriaProducto {
+  id       Int        @id @default(autoincrement())
+  nombre   String
+  Producto Producto[]
+}
+
+model Producto {
+  id           Int               @id @default(autoincrement())
+  nombre       String
+  categoria    CategoriaProducto @relation(fields: [id_categoria], references: [id])
+  id_categoria Int
+  precio_venta Float
 }
