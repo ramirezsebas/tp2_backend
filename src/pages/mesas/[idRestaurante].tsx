@@ -31,14 +31,17 @@ import {
   Box,
   Center,
   Link,
+  Text,
+  Select,
 } from "@chakra-ui/react";
-import { ConsumoMesa, Mesa } from "@prisma/client";
+import { Cliente, ConsumoMesa, DetalleConsumo, Mesa, Producto } from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
 import SpinnerLoading from "@/components/spinner";
 import { ApiService } from "@/data/api_service";
 import { MoreOptionsDialog } from "@/components/more_options_dialog";
 import { useRouter } from "next/router";
 import { set } from "date-fns";
+import CrearCliente from "@/components/crear_cliente";
 
 enum Action {
   NONE = "NONE",
@@ -68,7 +71,79 @@ export default function Mesas() {
   const [error, setError] = useState("");
   const [mesasLibres, setMesasLibres] = useState<Mesa[]>([]);
   const [openConsumos, setOpenConsumos] = useState(false);
-  const [consumos, setConsumos] = useState<ConsumoMesa[]>([]);
+  const [consumo, setConsumo] = useState<ConsumoMesa>();
+  const [clientes, setClientes] = useState<Cliente[]>();
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Number>();
+  const [cedula, setCedula] = useState<string>("");
+  const [showCrearCliente, setShowCrearCliente] = useState<boolean>(false);
+  const [clienteData, setClienteData] = useState({
+    nombre: "",
+    apellido: "",
+    cedula: 0,
+    // Add other fields as necessary
+  });
+  const [productos, setProductos] = React.useState<Producto[]>([]);
+  const [cantidad, setCantidad] = useState<Number>();
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Number>();
+  const [detallesConsumo, setDetallesConsumo] = useState<DetalleConsumo[]>();
+
+  useEffect(() => {
+    api
+      .get(`/productos`)
+      .then((response) => {
+        setProductos(response);
+        console.log(response);
+      })
+      .catch((error) => {
+        setError("Ocurrio un error al obtener los productos");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+      });
+  }, []);
+
+  const handleSubmitConsumos = async (e: any) => {
+    e.preventDefault();
+
+    try {
+      if (!clienteSeleccionado) {
+        setError("Debe seleccionar un cliente");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+        return;
+      }
+
+      if (!productoSeleccionado) {
+        setError("Debe seleccionar un producto");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+        return;
+      }
+
+      if (!cantidad) {
+        setError("Debe ingresar una cantidad");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+        return;
+      }
+
+      const res = await api.put(`/consumos`, {
+        cliente_id: clienteSeleccionado,
+        mesa_id: id,
+        cantidad: cantidad.toString(),
+        producto_id: productoSeleccionado,
+      });
+      setOpenConsumos(false);
+
+      resetForm();
+    } catch (error) {
+      console.log(error);
+      setError("Ocurrio un error al actualizar consumo");
+    }
+  };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -159,6 +234,20 @@ export default function Mesas() {
       });
   }, [idRestaurante]);
 
+  useEffect(() => {
+    api
+      .get(`/clientes`)
+      .then((response) => {
+        setClientes(response);
+      })
+      .catch((error) => {
+        setError("Ocurrio un error al obtener los clientes");
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+      });
+  }, []);
+
   if (loadingMesas) {
     return <SpinnerLoading title="Cargando Mesas" />;
   }
@@ -222,15 +311,29 @@ export default function Mesas() {
                   onClick={() => {
                     api
                       .get(
-                        `/restaurantes/${idRestaurante}/mesas/${mesa.id}/reservas`
+                        `/consumos`
                       )
                       .then((value) => {
                         console.log(value);
-                        setMesasLibres(value);
+                        console.log(mesa.id);
+                        console.log(idRestaurante);
+                        let val = value.filter(
+                          (rest: {
+                            id_mesa: number;
+                            estado: string;
+                            id_restaurante: string | string[] | undefined;
+                          }) => rest.id_mesa === mesa.id && rest.estado.toLocaleLowerCase() === "abierto"
+                            && Number(rest.id_restaurante) === Number(idRestaurante)
+                        );
+                        console.log(val);
 
-                        if(value.length === 0){
+                        // setMesasLibres(value);
 
-                            setOpenConsumos(true);
+                        if (value.length !== 0) {
+                          setConsumo(val[0]);
+                          setDetallesConsumo(val[0].DetalleConsumo);
+                          setClienteSeleccionado(Number(val[0].id_cliente));
+                          setOpenConsumos(true);
                         }
                       })
                       .catch((error) => {
@@ -241,7 +344,7 @@ export default function Mesas() {
                       });
                   }}
                 >
-                  Ver Consultas
+                  Ver Consumos
                 </Button>
               </Td>
             </Tr>
@@ -289,21 +392,78 @@ export default function Mesas() {
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Consultas
+              Consumos
             </AlertDialogHeader>
 
             <AlertDialogBody>
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmitConsumos}>
                 <VStack spacing={4}>
                   <FormControl isRequired isInvalid={error.length !== 0}>
-                    <FormLabel>Consultas</FormLabel>
+                    <FormLabel>Consumos</FormLabel>
                     {/* <Input
                       type="text"
-                      placeholder="Consultas"
-                      value={consultas}
-                      onChange={(e) => setConsultas(e.target.value)}
+                      placeholder="Consumos"
+                      value={Consumos}
+                      onChange={(e) => setConsumos(e.target.value)}
                     />
                     <FormErrorMessage>{error}</FormErrorMessage> */}
+                    <Select
+                      placeholder="Seleccione un cliente"
+                      value={clienteSeleccionado?.toString()}
+                      onChange={(e) => {
+                        console.log(e.target.value);
+                        if (Number(e.target.value) === 0) {
+                          setShowCrearCliente(true);
+                        }
+                        setClienteSeleccionado(Number(e.target.value));
+                      }}
+                    >
+                      {clientes?.map((cliente: Cliente) => (
+                        <option key={cliente.id} value={cliente.id}>
+                          {cliente.nombre}
+                        </option>
+                      ))}
+                      <option value={cedula ? cedula : "0"}>Nuevo Cliente</option>
+                    </Select>
+                    {showCrearCliente && (
+                      <CrearCliente
+                        clienteData={clienteData}
+                        setClienteData={setClienteData}
+                        setCedula={setCedula}
+                      />
+                    )}
+                    {detallesConsumo?.map((detalle: any) => (
+                      <Text>
+                        {detalle.nombre} - {detalle.cantidad} - {detalle.precio} - {detalle.total}
+                      </Text>
+                    ))
+                    }
+                    <Text>
+                      Agregar Detalle
+                    </Text>
+                    <Select
+                      placeholder="Seleccione un producto"
+                      value={productoSeleccionado?.toString()}
+                      onChange={(e) => {
+                        console.log(e.target.value);
+                        setProductoSeleccionado(Number(e.target.value));
+                      }}
+                    >
+                      {productos?.map((producto: Producto) => (
+                        <option key={producto.id} value={producto.id}>
+                          {producto.nombre}
+                        </option>
+                      ))}
+                    </Select>
+                    <Input
+                      type="number"
+                      placeholder="Cantidad"
+                      value={cantidad?.toString()}
+                      onChange={(e) => setCantidad(Number(e.target.value))}
+                    />
+                    <Text>
+                      Total: {consumo?.total ? consumo.total : 0}
+                    </Text>
                   </FormControl>
                 </VStack>
               </form>
