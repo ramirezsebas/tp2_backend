@@ -66,6 +66,7 @@ export default function Mesas() {
 
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const [action, setAction] = React.useState<Action>(Action.NONE);
+  const [isCreating, setIsCreating] = React.useState<boolean>(false);
 
   const [id, setId] = useState("");
   const [name, setName] = useState("");
@@ -82,6 +83,7 @@ export default function Mesas() {
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Number>();
   const [cedula, setCedula] = useState<string>("");
   const [showCrearCliente, setShowCrearCliente] = useState<boolean>(false);
+  const [totalFinal, setTotalFinal] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
   const [clienteData, setClienteData] = useState({
     nombre: "",
@@ -112,6 +114,11 @@ export default function Mesas() {
   const handleSubmitConsumos = async (e: any) => {
     e.preventDefault();
 
+    const productoSeleccionadoo = productos.filter(
+      (producto: Producto) =>
+        producto.id === productoSeleccionado
+    )[0];
+
     try {
       if (!clienteSeleccionado) {
         setError("Debe seleccionar un cliente");
@@ -121,28 +128,95 @@ export default function Mesas() {
         return;
       }
 
-      if (!productoSeleccionado) {
-        setError("Debe seleccionar un producto");
-        setTimeout(() => {
-          setError("");
-        }, 5000);
+
+
+      if (isCreating) {
+        if (!productoSeleccionado) {
+          setError("Debe seleccionar un producto");
+          setTimeout(() => {
+            setError("");
+          }, 5000);
+          return;
+        }
+
+        if (!cantidad) {
+          setError("Debe ingresar una cantidad");
+          setTimeout(() => {
+            setError("");
+          }, 5000);
+          return;
+        }
+
+
+
+        setOpenConsumos(false);
+        api
+          .post("/consumos", {
+            id_mesa: id,
+            id_cliente: clienteSeleccionado,
+            id_restaurante: idRestaurante,
+            total: productoSeleccionadoo.precio_venta * Number(cantidad),
+            DetalleConsumo: {
+              id_producto: productoSeleccionado,
+              cantidad: cantidad,
+              total: productoSeleccionadoo.precio_venta * Number(cantidad),
+              precio: Number(
+                productos.filter(
+                  (producto: Producto) =>
+                    producto.id === productoSeleccionado
+                )[0].precio_venta
+              ),
+            },
+          })
+          .then((response) => {
+            console.log(response);
+          })
+          .catch((error) => {
+            console.log(error);
+            setError("Ocurrio un error al crear el consumo");
+            setTimeout(() => {
+              setError("");
+            }, 5000);
+          });
         return;
       }
 
-      if (!cantidad) {
-        setError("Debe ingresar una cantidad");
-        setTimeout(() => {
-          setError("");
-        }, 5000);
-        return;
-      }
 
-      const res = await api.put(`/consumos`, {
-        cliente_id: clienteSeleccionado,
-        mesa_id: id,
-        cantidad: cantidad.toString(),
-        producto_id: productoSeleccionado,
-      });
+
+      console.log(productoSeleccionadoo);
+      console.log("Consumo:");
+      console.log(consumo);
+
+      const res = api.put(`/consumos/${consumo?.id}`, {
+        id_mesa: id,
+        id_cliente: clienteSeleccionado,
+        id_restaurante: idRestaurante,
+        estado: "abierto",
+        total: totalFinal,
+        DetalleConsumo: {
+          id_producto: productoSeleccionado,
+          cantidad: cantidad,
+          total: Number(
+            productoSeleccionadoo.precio_venta
+          ) * Number(cantidad),
+          precio: Number(
+            productoSeleccionadoo.precio_venta
+          ),
+        },
+      })
+        .then(
+          (response) => {
+            console.log(response);
+          }
+        )
+        .catch((error) => {
+          console.log(error);
+          setError("Ocurrio un error al crear el consumo");
+          setTimeout(() => {
+            setError("");
+          }, 5000);
+        }
+        );
       setOpenConsumos(false);
 
       resetForm();
@@ -311,54 +385,80 @@ export default function Mesas() {
                 >
                   Eliminar
                 </Button>
+                <Link href={`/consumos/${idRestaurante}/${mesa.id}`}>
+                  <Button
+                    colorScheme="red"
+                    variant="outline"
+                    onClick={() => {
+                      // api
+                      //   .get(`/consumos`)
+                      //   .then((value: ConsumoMesa[]) => {
+                      //     console.log(value);
+                      //     console.log(mesa.id);
+                      //     console.log(idRestaurante);
+                      //     setId(mesa.id.toString());
+                      //     let consumoFiltradosSinCliente: ConsumoMesa[] = value.filter(
+                      //       (consumoMesa) =>
+                      //         consumoMesa.id_mesa === mesa.id &&
+                      //         consumoMesa.estado.toLocaleLowerCase() === "abierto" &&
+                      //         Number(consumoMesa.id_restaurante) ===
+                      //         Number(idRestaurante)
+                      //     );
+                      //     console.log("val");
+                      //     console.log(consumoFiltradosSinCliente);
 
-                <Button
-                  colorScheme="red"
-                  variant="outline"
-                  onClick={() => {
-                    api
-                      .get(`/consumos`)
-                      .then((value) => {
-                        console.log(value);
-                        console.log(mesa.id);
-                        console.log(idRestaurante);
-                        setId(mesa.id.toString());
-                        let val = value.filter(
-                          (rest: {
-                            id_mesa: number;
-                            estado: string;
-                            id_restaurante: string | string[] | undefined;
-                          }) =>
-                            rest.id_mesa === mesa.id &&
-                            rest.estado.toLocaleLowerCase() === "abierto" &&
-                            Number(rest.id_restaurante) ===
-                              Number(idRestaurante)
-                        );
-                        console.log(val);
+                      //     // setMesasLibres(value);
 
-                        // setMesasLibres(value);
-                        setConsumo(val[0]);
-                        setDetallesConsumo(val[0]?.DetalleConsumo);
-                        setClienteSeleccionado(Number(val[0]?.id_cliente));
 
-                        setOpenConsumos(true);
+                      //     if (consumoFiltradosSinCliente.length !== 0) {
+                      //       let consumoFiltradoConCliente = consumoFiltradosSinCliente.filter(
+                      //         (rest: {
+                      //           id_mesa: number;
+                      //           estado: string;
 
-                        if (value.length !== 0) {
-                          setTotal(
-                            val.reduce((a: any, b: any) => a + b.total, 0)
-                          );
-                        }
-                      })
-                      .catch((error) => {
-                        setError("Ocurrio un error al obtener la mesa");
-                        setTimeout(() => {
-                          setError("");
-                        }, 5000);
-                      });
-                  }}
-                >
-                  Ver Consumos
-                </Button>
+                      //           id_cliente: number;
+                      //         }) =>
+
+                      //           rest.id_mesa === mesa.id &&
+                      //           rest.estado.toLowerCase() === "abierto" &&
+                      //           rest.id_cliente === Number(clienteSeleccionado)
+                      //       );
+
+
+                      //       console.log(consumoFiltradoConCliente[0]);
+                      //       setConsumo(consumoFiltradoConCliente[0]);
+                      //       setDetallesConsumo(consumoFiltradoConCliente[0]?.DetalleConsumo);
+                      //       setClienteSeleccionado(Number(consumoFiltradoConCliente[0]?.id_cliente));
+
+                      //       setOpenConsumos(true);
+
+
+
+
+
+                      //       setTotalFinal(
+                      //         consumoFiltradoConCliente[0]?.DetalleConsumo
+                      //           .reduce((contador: any, consumo: any) => contador + consumo.total, 0)
+                      //       );
+
+                      //       setIsCreating(false);
+                      //     } else {
+                      //       setOpenConsumos(true);
+                      //       setIsCreating(true);
+                      //     }
+                      //   })
+                      //   .catch((error) => {
+                      //     setError("Ocurrio un error al obtener la mesa");
+                      //     setTimeout(() => {
+                      //       setError("");
+                      //     }, 5000);
+                      //   });
+                    }}
+                  >
+                    Ver Consumos
+                  </Button>
+                </Link>
+
               </Td>
             </Tr>
           ))}
@@ -447,10 +547,21 @@ export default function Mesas() {
                         setCedula={setCedula}
                       />
                     )}
-                    {detallesConsumo?.map((detalle: any) => (
+                    <Text
+                      color="blue.500"
+                      size={"sm"}
+                    >Detalles</Text>
+                    {detallesConsumo?.map((detalle: DetalleConsumo) => (
                       <Text key={detalle.id}>
-                        {detalle.nombre} - {detalle.cantidad} - {detalle.precio}{" "}
-                        - {detalle.total}
+                        {productos.filter(
+                          (producto: Producto) =>
+                            producto.id === detalle.id_producto
+                        ).map((producto: Producto) => (
+                          producto.nombre
+                        )
+                        )
+                        } - Cantidad: {detalle.cantidad} - Precio: {detalle.precio}{" "}
+                        - Total: {detalle.total}
                       </Text>
                     ))}
                     <Text>Agregar Detalle</Text>
@@ -475,17 +586,17 @@ export default function Mesas() {
                       onChange={(e) => {
                         setTotal(
                           Number(e.target.value) *
-                            Number(
-                              productos.filter(
-                                (producto: Producto) =>
-                                  producto.id === productoSeleccionado
-                              )[0].precio_venta
-                            )
+                          Number(
+                            productos.filter(
+                              (producto: Producto) =>
+                                producto.id === productoSeleccionado
+                            )[0].precio_venta
+                          )
                         );
                         setCantidad(Number(e.target.value));
                       }}
                     />
-                    <Text>Total: {total}</Text>
+                    <Text>Total: {totalFinal}</Text>
                   </FormControl>
                 </VStack>
               </form>
@@ -497,37 +608,7 @@ export default function Mesas() {
               </Button>
               <Button
                 colorScheme="blue"
-                onClick={() => {
-                  setOpenConsumos(false);
-                  api
-                    .post("/consumos", {
-                      id_mesa: id,
-                      id_cliente: clienteSeleccionado,
-                      id_restaurante: idRestaurante,
-                      total: total,
-                      DetalleConsumo: {
-                        id_producto: productoSeleccionado,
-                        cantidad: cantidad,
-                        total: total,
-                        precio: Number(
-                          productos.filter(
-                            (producto: Producto) =>
-                              producto.id === productoSeleccionado
-                          )[0].precio_venta
-                        ),
-                      },
-                    })
-                    .then((response) => {
-                      console.log(response);
-                    })
-                    .catch((error) => {
-                      console.log(error);
-                      setError("Ocurrio un error al crear el consumo");
-                      setTimeout(() => {
-                        setError("");
-                      }, 5000);
-                    });
-                }}
+                onClick={handleSubmitConsumos}
                 ml={3}
               >
                 Guardar

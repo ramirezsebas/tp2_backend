@@ -126,7 +126,6 @@ export default async function handler(
               id_mesa: parseInt(idMesas),
             },
             include: {
-              producto: true,
               cliente: true,
               mesa: true,
               restaurante: true,

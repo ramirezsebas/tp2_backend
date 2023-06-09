@@ -20,7 +20,15 @@ export default async function handler(
       prisma.consumoMesa
         .findMany({
           include: {
-            DetalleConsumo: true,
+            DetalleConsumo: {
+              include: {
+                producto: true,
+              },
+            },
+            mesa: true,
+            cliente: true,
+            restaurante: true,
+
           },
         })
         .then((data) => {
