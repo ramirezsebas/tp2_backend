@@ -34,7 +34,13 @@ import {
   Text,
   Select,
 } from "@chakra-ui/react";
-import { Cliente, ConsumoMesa, DetalleConsumo, Mesa, Producto } from "@prisma/client";
+import {
+  Cliente,
+  ConsumoMesa,
+  DetalleConsumo,
+  Mesa,
+  Producto,
+} from "@prisma/client";
 import FloatingActionButton from "@/components/floating_action_button";
 import SpinnerLoading from "@/components/spinner";
 import { ApiService } from "@/data/api_service";
@@ -76,6 +82,7 @@ export default function Mesas() {
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Number>();
   const [cedula, setCedula] = useState<string>("");
   const [showCrearCliente, setShowCrearCliente] = useState<boolean>(false);
+  const [total, setTotal] = useState<number>(0);
   const [clienteData, setClienteData] = useState({
     nombre: "",
     apellido: "",
@@ -310,30 +317,36 @@ export default function Mesas() {
                   variant="outline"
                   onClick={() => {
                     api
-                      .get(
-                        `/consumos`
-                      )
+                      .get(`/consumos`)
                       .then((value) => {
                         console.log(value);
                         console.log(mesa.id);
                         console.log(idRestaurante);
+                        setId(mesa.id.toString());
                         let val = value.filter(
                           (rest: {
                             id_mesa: number;
                             estado: string;
                             id_restaurante: string | string[] | undefined;
-                          }) => rest.id_mesa === mesa.id && rest.estado.toLocaleLowerCase() === "abierto"
-                            && Number(rest.id_restaurante) === Number(idRestaurante)
+                          }) =>
+                            rest.id_mesa === mesa.id &&
+                            rest.estado.toLocaleLowerCase() === "abierto" &&
+                            Number(rest.id_restaurante) ===
+                              Number(idRestaurante)
                         );
                         console.log(val);
 
                         // setMesasLibres(value);
+                        setConsumo(val[0]);
+                        setDetallesConsumo(val[0]?.DetalleConsumo);
+                        setClienteSeleccionado(Number(val[0]?.id_cliente));
+
+                        setOpenConsumos(true);
 
                         if (value.length !== 0) {
-                          setConsumo(val[0]);
-                          setDetallesConsumo(val[0].DetalleConsumo);
-                          setClienteSeleccionado(Number(val[0].id_cliente));
-                          setOpenConsumos(true);
+                          setTotal(
+                            val.reduce((a: any, b: any) => a + b.total, 0)
+                          );
                         }
                       })
                       .catch((error) => {
@@ -423,7 +436,9 @@ export default function Mesas() {
                           {cliente.nombre}
                         </option>
                       ))}
-                      <option value={cedula ? cedula : "0"}>Nuevo Cliente</option>
+                      <option value={cedula ? cedula : "0"}>
+                        Nuevo Cliente
+                      </option>
                     </Select>
                     {showCrearCliente && (
                       <CrearCliente
@@ -433,14 +448,12 @@ export default function Mesas() {
                       />
                     )}
                     {detallesConsumo?.map((detalle: any) => (
-                      <Text>
-                        {detalle.nombre} - {detalle.cantidad} - {detalle.precio} - {detalle.total}
+                      <Text key={detalle.id}>
+                        {detalle.nombre} - {detalle.cantidad} - {detalle.precio}{" "}
+                        - {detalle.total}
                       </Text>
-                    ))
-                    }
-                    <Text>
-                      Agregar Detalle
-                    </Text>
+                    ))}
+                    <Text>Agregar Detalle</Text>
                     <Select
                       placeholder="Seleccione un producto"
                       value={productoSeleccionado?.toString()}
@@ -459,11 +472,20 @@ export default function Mesas() {
                       type="number"
                       placeholder="Cantidad"
                       value={cantidad?.toString()}
-                      onChange={(e) => setCantidad(Number(e.target.value))}
+                      onChange={(e) => {
+                        setTotal(
+                          Number(e.target.value) *
+                            Number(
+                              productos.filter(
+                                (producto: Producto) =>
+                                  producto.id === productoSeleccionado
+                              )[0].precio_venta
+                            )
+                        );
+                        setCantidad(Number(e.target.value));
+                      }}
                     />
-                    <Text>
-                      Total: {consumo?.total ? consumo.total : 0}
-                    </Text>
+                    <Text>Total: {total}</Text>
                   </FormControl>
                 </VStack>
               </form>
@@ -475,7 +497,37 @@ export default function Mesas() {
               </Button>
               <Button
                 colorScheme="blue"
-                onClick={() => setOpenConsumos(false)}
+                onClick={() => {
+                  setOpenConsumos(false);
+                  api
+                    .post("/consumos", {
+                      id_mesa: id,
+                      id_cliente: clienteSeleccionado,
+                      id_restaurante: idRestaurante,
+                      total: total,
+                      DetalleConsumo: {
+                        id_producto: productoSeleccionado,
+                        cantidad: cantidad,
+                        total: total,
+                        precio: Number(
+                          productos.filter(
+                            (producto: Producto) =>
+                              producto.id === productoSeleccionado
+                          )[0].precio_venta
+                        ),
+                      },
+                    })
+                    .then((response) => {
+                      console.log(response);
+                    })
+                    .catch((error) => {
+                      console.log(error);
+                      setError("Ocurrio un error al crear el consumo");
+                      setTimeout(() => {
+                        setError("");
+                      }, 5000);
+                    });
+                }}
                 ml={3}
               >
                 Guardar
